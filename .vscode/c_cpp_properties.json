@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "linux-gcc-x64",
+            "compilerArgs": [
+                "-std=gnu89",
+                "-L/usr/lib64/mysql",
+                "-I/usr/include/mysql",
+                "-lmysqlclient"
+            ]
+        }
+    ],
+    "version": 4
+}

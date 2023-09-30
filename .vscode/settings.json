@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "sockets.h": "c",
+        "socket.h": "c",
+        "in.h": "c",
+        "*.tcc": "c",
+        "protocole.h": "c",
+        "stdlib.h": "c",
+        "pthread.h": "c",
+        "sql_server_requests.h": "c"
+    }
+}
