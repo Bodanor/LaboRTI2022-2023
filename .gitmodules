@@ -1,0 +1,3 @@
+[submodule "libsockets"]
+	path = libsockets
+	url = https://github.com/Bodanor/libsockets.git
