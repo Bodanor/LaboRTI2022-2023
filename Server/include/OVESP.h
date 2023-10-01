@@ -1,7 +1,15 @@
 #ifndef OVESP_H
 #define OVESP_H
-
-/* MEAN Online VEgetables Shopping Protocol */
+/**
+ * @file OVESP.h
+ * @author Liwinux & Tinmar1010
+ * @brief MEAN Online VEgetables Shopping Protocol function definitions
+ * @version 0.1
+ * @date 2023-10-01
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
 
 #include <stdio.h>
 #include <unistd.h>
@@ -13,7 +21,6 @@
 
 #define MAX_CLIENTS 100
 
-/* Only for the server */
 int OVESP(char *requete, char *reponse, int socket);
 
 /* All client functions */

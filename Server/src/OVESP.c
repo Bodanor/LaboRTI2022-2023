@@ -1,5 +1,16 @@
 #include "OVESP.h"
 
+/**
+ * @file OVESP.c
+ * @author Liwinux & Tinmar1010
+ * @brief MEAN Online VEgetables Shopping Protocol function declarations
+ * @version 0.1
+ * @date 2023-10-01
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 static int OVESP_SEND(char *requete, int server_socket);
 static int OVESP_RECEIVE(char **reply, int server_socket);
 
