@@ -14,7 +14,7 @@ OBJS        := $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 DEPS        := $(OBJS:.o=.d)
 
 CC          := gcc
-CFLAGS      := -Wall -Wextra -Werror -std=gnu89 -g
+CFLAGS      := -Wall -Wextra -Werror -std=gnu89 -g -DDEBUG
 CPPFLAGS    := $(addprefix -I,$(INCS))
 LDFLAGS     := $(addprefix -L,$(dir $(LIBS_TARGET)))
 LDLIBS      := $(addprefix -l,$(LIBS))
