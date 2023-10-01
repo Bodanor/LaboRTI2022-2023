@@ -24,6 +24,8 @@ int OVESP_SEND(char *requete, int server_socket)
         return rep;
     }
 }
+
+/* Always free the returned reply */
 int OVESP_RECEIVE(char **reply, int server_socket)
 {
     int rep;
@@ -33,13 +35,18 @@ int OVESP_RECEIVE(char **reply, int server_socket)
     *reply = NULL;
     
     rep = Receive_msg(server_socket, &msg);
-    /* If we get a reply, whe set the reply parameter to point to the Msg data
-    ** Else, the reply will still point to NULL and we return the error from the Receive_msg function
-     */
+    
     if (rep > 0) {
-        *reply = msg->data;
+        *reply = (char *)malloc(sizeof(char)*msg->data_size);
+        if (reply == NULL) {
+            destroyMessage(msg);
+            return NULL;
+        }
+
+        memcpy(*reply, msg->data, msg->data_size);
     }
     
+    destroyMessage(msg);
     return rep;
         
 }
