@@ -21,7 +21,20 @@ int main()
         
     }
     */
-   return_val = username_already_exists("liwinux");
-   printf("%d\n", return_val);
-   return 0;
+
+    return_val = client_check_creds("Liwinux", "tes");
+    if (return_val == -1) {
+        printf("Database error !\n");
+    }
+    else if (return_val == 0) {
+        printf("Successfully connecetd 1\n");
+    }
+    else if (return_val == 1) {
+        printf("User doesnt exist in the database 1\n");
+    }
+    else if (return_val == 2) {
+        printf("Bad password for the user !\n");
+    }
+
+    return 0;
 }
