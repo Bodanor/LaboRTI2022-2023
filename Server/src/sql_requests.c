@@ -1,47 +1,52 @@
 #include "sql_requests.h"
 
-/* SQL main connection*/
+/**
+ * @file sql_requests.c
+ * @author Liwinux & Tinmar1010
+ * @brief Main functions definitions used to make requests to the database.
+ * @version 0.1
+ * @date 2023-10-01
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
+
+/**
+ * @brief Send a sql request and return the results.
+ * 
+ * @param request_str the request to send.
+ * @return Sql_result* : a pointer containing the result from the request.
+ * @return NULL : a malloc error occured or a database error occured.
+ */
+static Sql_result* sql_get_result(char *request_str);
+
+/* SQL main connection. Only one connexion*/
 static MYSQL *connexion;
 
+/* Mutex used when a request is sent to the database */
 static pthread_mutex_t mutexDB;
 
 
-int sql_requests_init(void)
-{
-    pthread_mutex_init(&mutexDB, NULL);
 
-    connexion = mysql_init(NULL);
-    if (mysql_real_connect(connexion, SQL_HOST, SQL_USER, SQL_PASS, SQL_DB, 0, 0, 0) == NULL)
-    {
-        fprintf(stderr, "(SERVEUR) Erreur de connexion à la base de données...\n");
-        return -1;
-    }
-    return 0;
-}
-
-struct Sql_request* sql_get_all_users(void)
+Sql_result* sql_get_result(char *request_str)
 {
-    char *request_str = "select username from clients";
     MYSQL_RES *resultat;
     MYSQL_ROW ligne;
     int i;
     int x;
-    struct Sql_request *request;
-
-    pthread_mutex_lock(&mutexDB);
+    Sql_result *request;
 
     if (mysql_query(connexion, request_str) == 0) {
         
         if ((resultat = mysql_store_result(connexion)) == NULL) {
             perror("Request error");
-            pthread_mutex_unlock(&mutexDB);
             return NULL;
         }
         else{
             /* Allocate memory for a request result */
-            request = (struct Sql_request *)malloc(sizeof(struct Sql_request));
+            request = (Sql_result *)malloc(sizeof(Sql_result));
             if (request == NULL) {
-                pthread_mutex_unlock(&mutexDB);
                 return NULL;
             }
             else {
@@ -52,7 +57,6 @@ struct Sql_request* sql_get_all_users(void)
                 /* Allocate enough pointers per users */
                 request->array_request = (char***)malloc(sizeof(char**)*request->rows);
                 if (request->array_request == NULL) {
-                    pthread_mutex_unlock(&mutexDB);
                     return NULL;
                 }
                 /* Loop through all the users */
@@ -60,7 +64,6 @@ struct Sql_request* sql_get_all_users(void)
                     /* Allocate pointer per column for the current user index */
                     request->array_request[i] = (char **)malloc(sizeof(char*)*request->columns_per_row);
                     if (request->array_request[i] == NULL) {
-                        pthread_mutex_unlock(&mutexDB);
                         return NULL;
                     }
                     
@@ -71,7 +74,6 @@ struct Sql_request* sql_get_all_users(void)
                             /* Allocate a final pointer which will hold the column value */
                             request->array_request[i][x] = (char*)malloc(sizeof(char)*strlen(ligne[x]));
                             if (request->array_request[i][x] == NULL) {
-                                pthread_mutex_unlock(&mutexDB);
                                 return NULL;
                             }
                             /* Copy the column to the current user index + column index */
@@ -97,24 +99,97 @@ struct Sql_request* sql_get_all_users(void)
         }
     }
     else {
-        pthread_mutex_unlock(&mutexDB);
         return NULL;
     }
-    mysql_free_result(resultat);
-    pthread_mutex_unlock(&mutexDB);
+
+    mysql_free_result(resultat); /* Free the result */
     return request;
 }
 
-void destroy_sql_request(struct Sql_request *request)
+
+
+int sql_requests_init(void)
+{
+    pthread_mutex_init(&mutexDB, NULL);
+
+    connexion = mysql_init(NULL);
+    /* Can we reach the database ? */
+    if (mysql_real_connect(connexion, SQL_HOST, SQL_USER, SQL_PASS, SQL_DB, 0, 0, 0) == NULL)
+    {
+        fprintf(stderr, "(SERVEUR) Erreur de connexion à la base de données...\n");
+        return -1;
+    }
+    return 0;
+}
+
+Sql_result* sql_get_all_users(void)
+{
+    char *request_str = "select login from clients"; /* Request to send */
+    Sql_result* results;
+
+    pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
+
+    results = sql_get_result(request_str);
+    if (results == NULL) {
+        pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
+        return NULL;
+    }
+    
+    /* Release the mutex and return the request result */
+
+    pthread_mutex_unlock(&mutexDB);
+    return results;
+    
+}
+
+void destroy_sql_result(Sql_result *request)
 {
     int i;
     int x;
-
+    
     for (i = 0; i < request->rows; i++)
         for (x = 0; x < request->columns_per_row; x++) {
             free(request->array_request[i][x]);
         }
     free(request->array_request);
     free(request);
+
+}
+int sql_add_client(char *username, char *password)
+{
+    char request_str[200];
+
+    sprintf(request_str, "insert into clients values (0, \"%s\", \"%s\");", username, password); /* Request to send */
+
+    pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
+    if (mysql_query(connexion, request_str) != 0) {
+        pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
+        return -1;
+    }
+    
+    /* Release the mutex and return 0 */
+    pthread_mutex_unlock(&mutexDB);
+    return 0;
+
+
+}
+Sql_result* sql_get_user_password(char *username)
+{
+    char request_str[200];
+    Sql_result* results;
+
+    sprintf(request_str, "select password from clients where login = \"%s\";", username); /* Request to send */
+
+    pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
+
+    results = sql_get_result(request_str);
+    if (results == NULL) {
+        pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
+        return NULL;
+    }
+    
+    /* Release the mutex and return the request result */
+    pthread_mutex_unlock(&mutexDB);
+    return results;
 
 }
