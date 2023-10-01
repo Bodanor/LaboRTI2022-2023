@@ -39,6 +39,13 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 
 -include $(DEPS)
 
+docs:
+	doxygen
+	$(MAKE) -C DOCS/latex
+
+docs-rm:
+	rm -rf DOCS
+	
 clean:
 	for f in $(dir $(LIBS_TARGET)); do $(MAKE) -C $$f clean; done
 	$(RM) $(OBJS) $(DEPS)
