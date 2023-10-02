@@ -22,11 +22,15 @@ LDLIBS      := $(addprefix -l,$(LIBS))
 RM          := rm -f
 DIR_DUP     = mkdir -p $(@D)
 
-all: $(NAME)
+all: $(NAME) client
 
 $(NAME): $(OBJS) $(LIBS_TARGET)
-	$(CC) main.c $(LDFLAGS) -L /usr/lib64/mysql  $(CPPFLAGS) $(OBJS) $(LDLIBS) -lmysqlclient -o $(NAME)
+	$(CC) main.c $(CFLAGS) $(LDFLAGS) -L /usr/lib64/mysql  $(CPPFLAGS) $(OBJS) $(LDLIBS) -lmysqlclient -o $(NAME)
 	$(info CREATED $(NAME))
+client : $(OBJS) $(LIBS_TARGET)
+	$(CC) client.c $(CFLAGS) $(LDFLAGS) -L /usr/lib64/mysql  $(CPPFLAGS) $(OBJS) $(LDLIBS) -lmysqlclient -o client
+	$(info CREATED $(NAME))
+
 
 $(LIBS_TARGET):
 	$(MAKE) -C $(@D)
@@ -48,7 +52,7 @@ docs-rm:
 clean:
 	for f in $(dir $(LIBS_TARGET)); do $(MAKE) -C $$f clean; done
 	$(RM) $(OBJS) $(DEPS)
-	$(RM) $(NAME)
+	$(RM) $(NAME) client
 
 .PHONY: clean
 
