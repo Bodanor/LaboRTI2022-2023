@@ -5,35 +5,24 @@
 
 #include "sockets.h"
 #include "server.h"
+#include "OVESP.h"
 
 int main()
 {
-    //int server_socket;
-    //server_socket =
-    Server_init();
-    int return_val;
+    int server_socket;
+    int client_socket;
+    int error_check = 0;
+    Message *msg;
 
-    // /int client_Socket;
-    /*
-    while(1) {
-        client_Socket = Accept_connexion(server_socket);
-        add_client(client_Socket);
+    msg = NULL;
+    server_socket = Server_init();
+
+    while (1) {
+        client_socket = Accept_connexion(server_socket);
+        Receive_msg(client_socket, &msg);
+        error_check = OVESP_server((char*)msg->data, client_socket);
+        printf("OVESP_SERVER : %d\n", error_check);
         
-    }
-    */
-
-    return_val = client_check_creds("Liwinux", "tes");
-    if (return_val == -1) {
-        printf("Database error !\n");
-    }
-    else if (return_val == 0) {
-        printf("Successfully connecetd 1\n");
-    }
-    else if (return_val == 1) {
-        printf("User doesnt exist in the database 1\n");
-    }
-    else if (return_val == 2) {
-        printf("Bad password for the user !\n");
     }
 
     return 0;
