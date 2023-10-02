@@ -72,7 +72,7 @@ Sql_result* sql_get_result(char *request_str)
                         /* Loop through all the columns per row */
                         for (x = 0; x < request->columns_per_row; x++) {
                             /* Allocate a final pointer which will hold the column value */
-                            request->array_request[i][x] = (char*)malloc(sizeof(char)*strlen(ligne[x]));
+                            request->array_request[i][x] = (char*)malloc(sizeof(char)*strlen(ligne[x]) + 1);
                             if (request->array_request[i][x] == NULL) {
                                 return NULL;
                             }
