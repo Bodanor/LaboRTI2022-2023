@@ -21,15 +21,41 @@
 
 #define MAX_CLIENTS 100
 
-#define LOGIN_OK "OK"
-#define LOGIN_BAD_PASSWORD "KO_Badpassword"
-#define LOGIN_BAD_USER "KO_Baduser"
-#define LOGIN_DB_FAIL "KO_DB_fail"
-#define LOGIN_ALREADY_EXISTS "KO_Userexists"
+#define LOGIN_COMMAND "LOGIN"
+#define SUCCESS "OK"
+#define FAIL "KO"
 
-int OVESP(char *requete, char *reponse, int socket);
+#define LOGIN_FAIL(REASON) (LOGIN_COMMAND"#"FAIL"#"REASON)
+#define LOGIN_OK LOGIN_COMMAND"#"SUCCESS
+
+#define LOGIN_BAD_PASSWORD "BAD_PASS"
+#define LOGIN_BAD_USER "BAD_USER"
+#define LOGIN_DB_FAIL "DB_FAIL"
+#define LOGIN_ALREADY_EXISTS "ALREADY_EXISTS"
+#define LOGIN_BAD_REQUEST "BAD_REQUEST"
+#define SERVER_ERROR "SERVER_ERROR"
+
+int OVESP_server(char *request, int client_socket);
 
 /* All client functions */
+
+/**
+ * @brief Login attempt main function logic.
+ * 
+ * @param user The username to login with.
+ * @param password The password to login with.
+ * @param new_user_flag The flag to create a new user.
+ * @param server_socket The server socket to try the attempt to.
+ * @return 0 : If the username and password are correct and matches an account.
+ * @return 1 : If the username doesn't exist.
+ * @return 2: If the password is incorrect.
+ * @return 3: If there was a database error.
+ * @return 4: If the @param new_user_flag flag has been set and a user already exists under this username.
+ * @return -1 : If the connection with the socket is lost. Possibly client or server end.
+ * @return -2 : If a malloc error occured or the data is corrupted.
+ * @return -3 : If an I/O error occured. That doesn't mean that the socket is closed or the connection is broken !
+ * @return -4 : If the server sent a bad reply. Could be a memory error from the server.
+ */
 int OVESP_Login(const char *user, const char *password, const char new_user_flag, int server_socket);
 int OVESP_Consult(int idArticle, int server_socket);
 int OVESP_Achat(int idArticle, int quantite, int server_socket);
