@@ -10,11 +10,11 @@ CPP_OBJECTS_CLIENTS := $(CPP_SOURCES_CLIENTS:%.cpp=%.o)
 all: Client
 
 Client:	$(CPP_OBJECTS_CLIENTS)
-	$(CC) -g $(CPP_OBJECTS_CLIENTS) $(CFLAGS_LIB_QT) -o $@
+	$(CC) -g $(CPP_OBJECTS_CLIENTS) ../Server/.build/* -I ../Server/include/ ../libsockets/.build/* -I ../libsockets/ -I/usr/include/mysql -m64 -L/usr/lib64/mysql -lmysqlclient $(CFLAGS_LIB_QT) -o $@
 
 
 %.o: %.cpp
-	$(CC) $(CFLAGS_COMMON) $(CFLAGSSQL) -o $@ $<
+	$(CC) $(CFLAGS_COMMON) ../Server/.build/* -I ../Server/include/ ../libsockets/.build/* -I ../libsockets/ $(CFLAGSSQL) -o $@ $<
 
 clean:
 	ipcrm -a

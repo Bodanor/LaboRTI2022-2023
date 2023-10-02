@@ -6,6 +6,7 @@ using namespace std;
 
 extern WindowClient *w;
 
+
 #define REPERTOIRE_IMAGES "images/"
 
 WindowClient::WindowClient(QWidget *parent) : QMainWindow(parent), ui(new Ui::WindowClient)
@@ -273,6 +274,8 @@ void WindowClient::closeEvent(QCloseEvent *event)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void WindowClient::on_pushButtonLogin_clicked()
 {
+  //Server_connect("localhost", 4444);
+  w->getNom();
 
 }
 

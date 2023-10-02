@@ -7,6 +7,9 @@
         "protocole.h": "c",
         "stdlib.h": "c",
         "pthread.h": "c",
-        "sql_server_requests.h": "c"
+        "sql_server_requests.h": "c",
+        "ovesp.h": "c",
+        "server.h": "c",
+        "sql_requests.h": "c"
     }
 }

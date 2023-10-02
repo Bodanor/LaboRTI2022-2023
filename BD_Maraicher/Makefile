@@ -15,12 +15,7 @@ $(NAME): $(SRCS)
 	$(info CREATED $@)
 
 clean:
-	$(RM) $(DEPS)
-
-fclean: clean
 	$(RM) $(NAME)
-re:
-	$(MAKE) fclean
-	$(MAKE) all
 
-.PHONY: clean fclean re
+
+.PHONY: clean
