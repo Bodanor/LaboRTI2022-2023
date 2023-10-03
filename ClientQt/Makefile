@@ -1,9 +1,9 @@
 NAME        := Client
 
-LIBS        := sockets
-LIBS_TARGET := ../libsockets/libsockets.a
+LIBS        := sockets pthread Qt5Widgets Qt5Gui Qt5Core GL
+LIBS_TARGET := ../libsockets/libsockets.a . /usr/lib64/qt5/mkspecs/linux-g++ /usr/lib64
 
-INCS        := . ../Server/include ../libsockets/ /usr/include/mysql
+INCS        := . ../Server/include ../libsockets/ /usr/include/mysql /usr/include/qt5 /usr/include/qt5/QtWidgets /usr/include/qt5/QtGui /usr/include/qt5/QtCore
 
 SRCS        := $(wildcard *.cpp)
 BUILD_DIR   := .build
@@ -11,8 +11,8 @@ OBJS        := $(SRCS:%.cpp=$(BUILD_DIR)/%.o)
 DEPS        := $(OBJS:.o=.d)
 
 CC = g++
-CFLAGS_OBJECTS =  -MMD -MP -Wno-unused-parameter -c -pipe -g -std=gnu++11 -Wall -W -D_REENTRANT -fPIC -DQT_DEPRECATED_WARNINGS -DQT_QML_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -I. -isystem /usr/include/qt5 -isystem /usr/include/qt5/QtWidgets -isystem /usr/include/qt5/QtGui -isystem /usr/include/qt5/QtCore -I. -I. -I/usr/lib64/qt5/mkspecs/linux-g++ $(addprefix -I,$(INCS))
-CFLAGS_EXEC = /usr/lib64/libQt5Widgets.so /usr/lib64/libQt5Gui.so /usr/lib64/libQt5Core.so /usr/lib64/libGL.so -lpthread
+CFLAGS =  -MMD -MP -Wno-unused-parameter -c -pipe -g -std=gnu++11 -Wall -W -D_REENTRANT -fPIC -DQT_DEPRECATED_WARNINGS -DQT_QML_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
+CPPFLAGS    := $(addprefix -I,$(INCS))
 LDFLAGS     := $(addprefix -L,$(dir $(LIBS_TARGET)))
 LDLIBS      := $(addprefix -l,$(LIBS))
 
@@ -22,7 +22,7 @@ DIR_DUP     = mkdir -p $(@D)
 all: $(NAME)
 
 $(NAME): $(OBJS) $(LIBS_TARGET)
-	$(CC) $(OBJS) $(CFLAGS_EXEC) $(LDFLAGS) $(LDLIBS) -o $(NAME)
+	$(CC) $(OBJS) $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) -o $(NAME)
 	$(info CREATED $(NAME))
 
 $(LIBS_TARGET):
@@ -30,7 +30,7 @@ $(LIBS_TARGET):
 
 $(BUILD_DIR)/%.o: %.cpp
 	$(DIR_DUP)
-	$(CC) $(CFLAGS_OBJECTS) -o $@ $<
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) -o $@ $<
 	$(info CREATED $@)
 
 -include $(DEPS)
