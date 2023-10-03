@@ -1,7 +1,7 @@
 NAME        := Client
 
 LIBS        := pthread Qt5Widgets Qt5Gui Qt5Core GL sockets ovesp server mysqlclient
-LIBS_TARGET := ../libsockets/libsockets.a ../libovesp/libovesp.a ../libserver/libserver.a . /usr/lib64/qt5/mkspecs/linux-g++ /usr/lib64 /usr/include/mysql
+LIBS_TARGET := ../libsockets/libsockets.a ../libovesp/libovesp.a ../libserver/libserver.a /usr/lib64/qt5/mkspecs/linux-g++ /usr/lib64 /usr/include/mysql
 
 INCS        := ../libsockets/include ../libserver/include ../libovesp/include . ../Server/include /usr/include/mysql /usr/include/qt5 /usr/include/qt5/QtWidgets /usr/include/qt5/QtGui /usr/include/qt5/QtCore
 
@@ -22,18 +22,19 @@ DIR_DUP     = mkdir -p $(@D)
 all: $(NAME)
 
 $(NAME): $(OBJS) $(LIBS_TARGET)
+	$(info Building the final target : $@)
 	$(CC) $(OBJS) $(CPPFLAGS) $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) -o $(NAME)
-	$(info CREATED $(NAME))
 
 $(LIBS_TARGET):
 	$(MAKE) -C $(@D)
 
 $(BUILD_DIR)/%.o: %.cpp
+	$(info Compiling object file : $@)
 	$(DIR_DUP)
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) -o $@ $<
-	$(info CREATED $@)
 
 -include $(DEPS)
 
 clean:
+	for f in $(dir $(LIBS_TARGET)); do $(MAKE) -C $$f clean; done
 	$(RM) $(OBJS) $(DEPS) $(NAME)

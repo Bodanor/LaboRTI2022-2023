@@ -1,5 +1,8 @@
 NAME        := libserver.a
 
+LIBS        := sockets
+LIBS_TARGET := ../libsockets/libsockets.a
+
 INCS        := include ../libsockets/include /usr/include/mysql
 
 SRC_DIR     := src
@@ -12,7 +15,7 @@ DEPS        := $(OBJS:.o=.d)
 CC          := gcc
 CFLAGS      := -Wall -Wextra -std=gnu89 -g -DDEBUG -MMD -MP
 AR          := ar
-ARFLAGS     := -r -c -s
+ARFLAGS     := -r -c -T -v
 
 CPPFLAGS    := $(addprefix -I,$(INCS))
 
@@ -23,14 +26,16 @@ DIR_DUP     = mkdir -p $(@D)
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	$(AR) $(ARFLAGS) $(NAME) $(OBJS)
-	$(info CREATED $(NAME))
+	$(info Making static library : $@)
+	$(AR) $(ARFLAGS) $(NAME) $(LIBS_TARGET) $(OBJS)
 
+$(LIBS_TARGET): $(LIBS_TARGET)
+	-$(MAKE) -C $(@D)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	$(info Compiling object file : $@)
 	$(DIR_DUP)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
-	$(info CREATED $@)
 
 -include $(DEPS)
 

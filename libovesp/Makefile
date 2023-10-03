@@ -1,5 +1,8 @@
 NAME        := libovesp.a
 
+LIBS        := sockets server
+LIBS_TARGET := ../libsockets/libsockets.a ../libserver/libserver.a
+
 INCS        := include ../libsockets/include ../libserver/include /usr/include/mysql
 
 SRC_DIR     := src
@@ -12,7 +15,7 @@ DEPS        := $(OBJS:.o=.d)
 CC          := gcc
 CFLAGS      := -Wall -Wextra -std=gnu89 -g -DDEBUG -MMD -MP
 AR          := ar
-ARFLAGS     := -r -c -s -v
+ARFLAGS     := -r -c -s -v -T
 
 CPPFLAGS    := $(addprefix -I,$(INCS))
 
@@ -22,15 +25,17 @@ DIR_DUP     = mkdir -p $(@D)
 
 all: $(NAME)
 
-$(NAME): $(OBJS)
-	$(AR) $(ARFLAGS) $(NAME) $(OBJS)
-	$(info CREATED $(NAME))
+$(NAME): $(OBJS) $(LIBS_TARGET)
+	$(info Making static library : $@)
+	$(AR) $(ARFLAGS) $(NAME) $(LIBS_TARGET) $(OBJS)
 
+$(LIBS_TARGET):
+	-$(MAKE) -C $(@D)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	$(info Compiling object file : $@)
 	$(DIR_DUP)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
-	$(info CREATED $@)
 
 -include $(DEPS)
 
