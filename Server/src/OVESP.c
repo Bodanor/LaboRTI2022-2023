@@ -87,7 +87,9 @@ int OVESP_RECEIVE(OVESP **reply_tokens, int src_socket)
         destroyMessage(msg);
         return -2;
     }
-    //TODO: destroy message, possible erreur avec OVESP_RETRIEVE_TOKENS qui copie simplement le pointeur et pas la chaine...
+
+    /* Destroy the message, as we have tokenized it */
+    destroyMessage(msg);
     
     return 0;
 }
@@ -104,10 +106,16 @@ int OVESP_SEND(const char *request, int dst_socket)
     return error_check;
 
 }
-void destroy_OVESP(OVESP *ovsp)
+void destroy_OVESP(OVESP *ovesp)
 {
-    free(ovsp->tokensData);
-    free(ovsp);
+    int i;
+
+    /* Iterate all the pointers and free them */
+    for (i = 0; i < ovesp->tokens; i++)
+        free(ovesp->tokensData[i]);
+
+    free(ovesp->tokensData);
+    free(ovesp);
 }
 int OVESP_LOGIN_OPERATION(OVESP *request_tokens, int client_socket)
 {   
@@ -187,7 +195,13 @@ OVESP* OVESP_RETRIEVE_TOKENS(char *request)
     /* While all tokens are not retrieved we loop*/
     while (tokens_ptr != NULL) {
         
-        tokens->tokensData[tokensCount++] = tokens_ptr; /* Copy the pointer from strktok to the righ token index */
+        /* Allocate memory for the token length + 1 for the null terminator */
+        tokens->tokensData[tokensCount] = (char*)malloc(sizeof(char)*strlen(tokens_ptr) + 1);
+        if (tokens->tokensData[tokensCount] == NULL) {
+            destroy_OVESP(tokens);
+            return NULL;
+        }
+        strcpy(tokens->tokensData[tokensCount++], tokens_ptr); /* Copy the pointer from strktok to the righ token index */
         tokens_ptr = strtok(NULL, "#");
     }
     
