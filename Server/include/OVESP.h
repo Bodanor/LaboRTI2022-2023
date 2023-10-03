@@ -25,8 +25,8 @@
 #define SUCCESS "OK"
 #define FAIL "KO"
 
-#define LOGIN_FAIL(REASON) (LOGIN_COMMAND"#"FAIL"#"REASON)
-#define LOGIN_OK LOGIN_COMMAND"#"SUCCESS
+#define LOGIN_FAIL(REASON) (LOGIN_COMMAND "#" FAIL "#"REASON)
+#define LOGIN_OK LOGIN_COMMAND "#" SUCCESS
 
 #define LOGIN_BAD_PASSWORD "BAD_PASS"
 #define LOGIN_BAD_USER "BAD_USER"
@@ -57,7 +57,7 @@ int OVESP_server(char *request, int client_socket);
  * @return -4 : If the server sent a bad reply. Could be a memory error from the server.
  */
 int OVESP_Login(const char *user, const char *password, const char new_user_flag, int server_socket);
-int OVESP_Consult(int idArticle, int server_socket);
+char OVESP_Consult(int idArticle, int server_socket);
 int OVESP_Achat(int idArticle, int quantite, int server_socket);
 int OVESP_Caddie(int server_socket);
 int OVESP_Cancel(int idArticle, int server_socket);

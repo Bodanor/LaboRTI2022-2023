@@ -1,9 +1,9 @@
 NAME        := Client
 
-LIBS        := sockets pthread Qt5Widgets Qt5Gui Qt5Core GL
-LIBS_TARGET := ../libsockets/libsockets.a . /usr/lib64/qt5/mkspecs/linux-g++ /usr/lib64
+LIBS        := pthread Qt5Widgets Qt5Gui Qt5Core GL mysqlclient sockets
+LIBS_TARGET := ../libsockets/libsockets.a . /usr/lib64/qt5/mkspecs/linux-g++ /usr/lib64 /usr/include/mysql
 
-INCS        := . ../Server/include ../libsockets/ /usr/include/mysql /usr/include/qt5 /usr/include/qt5/QtWidgets /usr/include/qt5/QtGui /usr/include/qt5/QtCore
+INCS        := ../libsockets/ . ../Server/include /usr/include/mysql /usr/include/qt5 /usr/include/qt5/QtWidgets /usr/include/qt5/QtGui /usr/include/qt5/QtCore
 
 SRCS        := $(wildcard *.cpp)
 BUILD_DIR   := .build
@@ -22,7 +22,7 @@ DIR_DUP     = mkdir -p $(@D)
 all: $(NAME)
 
 $(NAME): $(OBJS) $(LIBS_TARGET)
-	$(CC) $(OBJS) $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) -o $(NAME)
+	$(CC) $(OBJS) ../Server/.build/server.o ../Server/.build/OVESP.o  ../Server/.build/sql_requests.o $(CPPFLAGS) $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) -o $(NAME)
 	$(info CREATED $(NAME))
 
 $(LIBS_TARGET):

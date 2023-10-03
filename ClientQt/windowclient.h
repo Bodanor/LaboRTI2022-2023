@@ -2,8 +2,12 @@
 #define WINDOWCLIENT_H
 
 #include <QMainWindow>
-#include "sockets.h"
+extern "C" {
+#include "server.h"
 #include "OVESP.h"
+}
+
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class WindowClient; }
@@ -42,6 +46,8 @@ public:
     void dialogueMessage(const char *titre, const char *message);
     void dialogueErreur(const char *titre, const char *message);
 
+    void setSocket(int socket);
+    int getSocket();
 private slots:
     void on_pushButtonLogin_clicked();
     void on_pushButtonLogout_clicked();
@@ -57,5 +63,6 @@ private:
 
     char motDePasse[20];
     char nom[20];
+    int socket_server;
 };
 #endif // WINDOWCLIENT_H

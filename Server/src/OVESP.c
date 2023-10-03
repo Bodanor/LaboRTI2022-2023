@@ -291,3 +291,23 @@ int OVESP_Login(const char *user, const char *password, const char new_user_flag
     destroy_OVESP(ovesp);
     return 0;
 }
+char OVESP_Consult(int idArticle, int server_socket)
+{
+    int error_check;
+    char buffer[50];
+    OVESP *ovesp;
+
+    error_check = 0;
+
+    sprintf(buffer, "%s#%d#", LOGIN_COMMAND, idArticle);
+
+    error_check = OVESP_SEND(buffer, server_socket);
+    /* if an error occured we return the return statement from the OVESP_SEND function */
+    if (error_check < 0)
+        return error_check;
+
+
+    error_check = OVESP_RECEIVE(&ovesp, server_socket);
+    if (error_check < 0)
+        return error_check;
+}
