@@ -1,9 +1,9 @@
 NAME        := server
 
-LIBS        := sockets mysqlclient
-LIBS_TARGET := ../libsockets/libsockets.a
+LIBS        := sockets server ovesp mysqlclient
+LIBS_TARGET := ../libsockets/libsockets.a ../libserver/libserver.a ../libovesp/libovesp.a
 
-INCS        := include ../libsockets/ /usr/include/mysql
+INCS        := include /usr/include/mysql ../libsockets/include ../libserver/include ../libovesp/include /usr/include/mysql
 
 SRC_DIR     := src
 SRCS        := $(wildcard $(SRC_DIR)/*.c) #Tu prends tout les fichiers SRC_DIR#

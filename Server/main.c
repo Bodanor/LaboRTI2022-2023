@@ -3,8 +3,6 @@
 #include <getopt.h>
 #include <stdlib.h>
 
-#include "sockets.h"
-#include "server.h"
 #include "OVESP.h"
 
 void show_help_menu (void);
