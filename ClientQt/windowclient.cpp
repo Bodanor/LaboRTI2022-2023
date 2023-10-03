@@ -285,6 +285,7 @@ void WindowClient::on_pushButtonLogin_clicked()
     setSocket(Server_connect("localhost", 4444));
     
     error_check = OVESP_Login(getNom(), getMotDePasse(), isNouveauClientChecked(), getSocket());
+    printf("Error_check : %d\n" ,error_check);
     switch(error_check)
     {
         case 0 :
@@ -293,7 +294,7 @@ void WindowClient::on_pushButtonLogin_clicked()
             break;
         case 1 :
             /*USERNAME DOESNT EXIS*/ 
-            dialogueErreur("Eh merte", "L'user existe deja");
+            dialogueErreur("Eh merte", "L'user existe pas");
             break;
         case 2 : 
             /*PASSWORD INCORRECT*/

@@ -122,6 +122,9 @@ int OVESP_LOGIN_OPERATION(OVESP *request_tokens, int client_socket)
     int error_check;
     char buffer[200];
 
+    for (error_check = 0; error_check < request_tokens->tokens; error_check++)
+        printf("%s\n", request_tokens->tokensData[error_check]);
+
     error_check = 0;
     /* If new user is asked we check in the database if it already exists */
     if (strcmp(request_tokens->tokensData[3], "1") == 0) {
@@ -156,6 +159,7 @@ int OVESP_LOGIN_OPERATION(OVESP *request_tokens, int client_socket)
         strcpy(buffer, LOGIN_FAIL(LOGIN_BAD_REQUEST));
     }
 
+    printf("REPONSE : %s", buffer);
     return OVESP_SEND(buffer, client_socket);
 
 }
@@ -234,10 +238,12 @@ int OVESP_Login(const char *user, const char *password, const char new_user_flag
     int error_check;
     char buffer[200];
     OVESP *ovesp;
-
+    
     error_check = 0;
 
-    sprintf(buffer, "%s#%s#%s#%c", LOGIN_COMMAND, user, password, new_user_flag);
+    
+
+    sprintf(buffer, "%s#%s#%s#%c", LOGIN_COMMAND, user, password, new_user_flag + 0x30);
 
     error_check = OVESP_SEND(buffer, server_socket);
     /* if an error occured we return the return statement from the OVESP_SEND function */
@@ -248,6 +254,8 @@ int OVESP_Login(const char *user, const char *password, const char new_user_flag
     if (error_check < 0)
         return error_check;
     
+
+
     if (strcmp(ovesp->tokensData[0], LOGIN_COMMAND) == 0) {
         
         if (strcmp(ovesp->tokensData[1], SUCCESS) == 0) {
@@ -291,7 +299,7 @@ int OVESP_Login(const char *user, const char *password, const char new_user_flag
     destroy_OVESP(ovesp);
     return 0;
 }
-char OVESP_Consult(int idArticle, int server_socket)
+int OVESP_Consult(int idArticle, int server_socket)
 {
     int error_check;
     char buffer[50];

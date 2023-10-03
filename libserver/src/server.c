@@ -176,12 +176,16 @@ int username_already_exists(char *username)
 }
 int create_new_user(char *username, char *password)
 {
+    int error_check;
+
     /* If error or user already exist, return 1*/
-    if (username_already_exists(username) <= 0) {
-        return 1;
+    if ((error_check = username_already_exists(username)) < 0 ) {
+        return error_check;
     }
+    else if (error_check == 1)
+        return 1;
     else {
-        if (sql_add_client(username, password) == -1) {
+        if ((error_check = sql_add_client(username, password)) < 0 ) {
             /* Could not create the user*/
             return -1;
         }
