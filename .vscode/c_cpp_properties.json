@@ -13,7 +13,9 @@
             "cStandard": "c17",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-gcc-x64",
-            "compilerArgs": []
+            "compilerArgs": [
+                "-std=gnu89"
+            ]
         }
     ],
     "version": 4
