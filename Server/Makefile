@@ -1,12 +1,12 @@
 NAME        := server
 
-LIBS        := sockets
+LIBS        := sockets mysqlclient
 LIBS_TARGET := ../libsockets/libsockets.a
 
 INCS        := include ../libsockets/ /usr/include/mysql
 
 SRC_DIR     := src
-SRCS        := $(wildcard $(SRC_DIR)/*.c)#Tu prends tout les fichiers SRC_DIR#
+SRCS        := $(wildcard $(SRC_DIR)/*.c) #Tu prends tout les fichiers SRC_DIR#
 
 BUILD_DIR   := .build
 OBJS        := $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -22,22 +22,19 @@ LDLIBS      := $(addprefix -l,$(LIBS))
 RM          := rm -f
 DIR_DUP     = mkdir -p $(@D)
 
-all: $(NAME) client
+all: $(NAME)
 
 $(NAME): $(OBJS) $(LIBS_TARGET)
-	$(CC) main.c $(CFLAGS) $(LDFLAGS) -L /usr/lib64/mysql  $(CPPFLAGS) $(OBJS) $(LDLIBS) -lmysqlclient -o $(NAME)
-	$(info CREATED $(NAME))
-client : $(OBJS) $(LIBS_TARGET)
-	$(CC) client.c $(CFLAGS) $(LDFLAGS) -L /usr/lib64/mysql  $(CPPFLAGS) $(OBJS) $(LDLIBS) -lmysqlclient -o client
+	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $(NAME)
 	$(info CREATED $(NAME))
 
 
 $(LIBS_TARGET):
-	$(MAKE) -C $(@D)
+	-$(MAKE) -C $(@D)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(DIR_DUP)
-	$(CC) $(CFLAGS) $(CPPFLAGS) -L /usr/lib64/mysql -lmysqlclient -c -o $@ $<
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) -c -o $@ $<
 	$(info CREATED $@)
 
 -include $(DEPS)
@@ -52,7 +49,7 @@ docs-rm:
 clean:
 	for f in $(dir $(LIBS_TARGET)); do $(MAKE) -C $$f clean; done
 	$(RM) $(OBJS) $(DEPS)
-	$(RM) $(NAME) client
+	$(RM) $(NAME)
 
 .PHONY: clean
 
