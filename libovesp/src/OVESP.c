@@ -307,7 +307,7 @@ int OVESP_Consult(int idArticle, int server_socket)
 
     error_check = 0;
 
-    sprintf(buffer, "%s#%d#", LOGIN_COMMAND, idArticle);
+    sprintf(buffer, "%s#%d#", CONSULT_COMMAND, idArticle);
 
     error_check = OVESP_SEND(buffer, server_socket);
     /* if an error occured we return the return statement from the OVESP_SEND function */
@@ -318,4 +318,9 @@ int OVESP_Consult(int idArticle, int server_socket)
     error_check = OVESP_RECEIVE(&ovesp, server_socket);
     if (error_check < 0)
         return error_check;
+
+    if(strcmp(ovesp->tokensData[0], CONSULT_COMMAND) == 0)
+    {
+
+    }
 }

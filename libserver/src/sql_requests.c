@@ -193,3 +193,41 @@ Sql_result* sql_get_user_password(char *username)
     return results;
 
 }
+Sql_result* sql_get_article(char *idArticle)
+{
+    char request[200];
+    Sql_result *results;
+    /*Il faut créer la table article */
+    sprintf(request, "select * from article where id = %s;", idArticle);
+
+    pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
+
+    results = sql_get_result(request);
+    if (results == NULL) {
+        pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
+        return NULL;
+    }
+    
+    /* Release the mutex and return the request result */
+    pthread_mutex_unlock(&mutexDB);
+    return results;
+}
+Sql_result* sql_get_all_articles(void)
+{
+    char *request_str = "select * from articles"; /* Request to send */
+    Sql_result* results;
+
+    pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
+
+    results = sql_get_result(request_str);
+    if (results == NULL) {
+        pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
+        return NULL;
+    }
+    
+    /* Release the mutex and return the request result */
+
+    pthread_mutex_unlock(&mutexDB);
+    return results;
+    
+}

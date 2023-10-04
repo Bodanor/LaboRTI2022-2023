@@ -75,4 +75,7 @@ Sql_result* sql_get_all_users(void);
  */
 void destroy_sql_result(Sql_result *request);
 
+Sql_result* sql_get_article(char *idArticle);
+Sql_result* sql_get_all_articles(void);
+
 #endif 

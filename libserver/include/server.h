@@ -91,4 +91,7 @@ int username_already_exists(char *username);
  */
 int client_check_creds(char *username, char *password);
 
+int consult(char *idArticle, char *Article);
+int articles_already_exists(char *username);
+
 #endif

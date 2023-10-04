@@ -282,7 +282,7 @@ void WindowClient::closeEvent(QCloseEvent *event)
 void WindowClient::on_pushButtonLogin_clicked()
 {
     int error_check;
-    setSocket(Server_connect("localhost", 4444));
+    setSocket(Server_connect("94.106.243.226", 4444));
     
     error_check = OVESP_Login(getNom(), getMotDePasse(), isNouveauClientChecked(), getSocket());
     printf("Error_check : %d\n" ,error_check);
