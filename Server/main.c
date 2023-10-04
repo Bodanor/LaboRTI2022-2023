@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "OVESP.h"
+#include "server.h"
 
 void show_help_menu (void);
 
@@ -21,16 +22,21 @@ int main(int argc, char **argv)
 {
     int port;
     int threads;
+    char *config_file;
     int i;
+    int server_socket;
+    int client_socket;
+    int error_check;
 
-    port = threads = 0;
-    OVESP_Login("chris", "papa", 0, 0);
+    config_file = NULL;
+    port = threads = -1;
 
     const char *optstring = "hp:t:";
     const struct option lopts[] = {
         {"help", no_argument, NULL, 'h'}, /* Print the help menu */
         {"port", required_argument, NULL, 'p'}, /* Required the port number to listen to */
         {"threads", required_argument, NULL, 't'}, /* Number of threads to create */
+        {"config", required_argument, NULL, 'c'},
         {NULL, no_argument, NULL, 0}, /* If no arguments, read the config file */
     };
 
@@ -48,34 +54,58 @@ int main(int argc, char **argv)
                 break;
             
             case 't' :
+                if (check_is_number(optarg) == 1) {
+                    printf("Bad argument passed for the threads numbers. Argument is not a number\n");
+                    break;
+                }
+                threads = atoi(optarg);
+                break;
             case 'p' :
-                for (i = 0; i < (int)strlen(optarg); i++)
-                if (isdigit(optarg[i]) == 0)
-                {
-                    printf("Bad argument for the port number. Argument is not a number\n");
+                if (check_is_number(optarg) == 1) {
+                    printf("Bad argument passed for the port numbers. Argument is not a port\n");
+                    break;
+                }
+                port = atoi(optarg);
+                break;
+            case 'c':
+                config_file = (char*)malloc(sizeof(char)*strlen(optarg) + 1);
+                if (config_file == NULL) {
+                    printf("Malloc error !\n");
                     return -1;
                 }
-
-            break;
-            
+                strcpy(config_file, optarg);
+                break;
         }
         index = -1;
         
     }
 
-    /* int server_socket;
-    int client_socket;
-    Message *msg;
+    if (optind < argc)
+    {
+      while (optind < argc)
+        printf ("Non option \"%s\". Ignoring it.\n", argv[optind++]);
+    }
+    
+    server_socket = Server_init(port, threads, config_file);
 
-    msg = NULL;
-    server_socket = Server_init();
 
     while (1) {
         client_socket = Accept_connexion(server_socket);
-        Receive_msg(client_socket, &msg);
-        OVESP_server((char*)msg->data, client_socket);
-        
+        error_check = OVESP_server(client_socket);
+        if (error_check == -1) {
+            printf("Client deconnecte \n");
+        }
+        else if (error_check == -2) {
+            printf("Corrupted data\n");
+        }
+        else if (error_check == -3) {
+            printf("I/O error \n");
+        }
+        else if (error_check == -4) {
+            printf("Internal error\n");
+        }
+    
     }
 
-    return 0; */
+    return 0; 
 }

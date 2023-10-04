@@ -20,7 +20,7 @@
 #include <signal.h>
 
 #include "sockets.h"
-
+#include "sql_requests.h"
 /**
  * @brief Main default settings when no config file is to be found.
  * 
@@ -48,7 +48,7 @@ void* ClientFunction(void *p);
  * 
  * @return -1 if the connection to the database could be established. Otherwise the server socket in returned.
  */
-int Server_init(const unsigned int port, const int threads, const char *configfile);
+int Server_init(const int port, const int threads, const char *configfile);
 
 /**
  * @brief Add the client socket to currecly conencted clients sockets which is an array of ints.
@@ -57,6 +57,7 @@ int Server_init(const unsigned int port, const int threads, const char *configfi
  */
 void add_client(int client_socket);
 
+int check_is_number(const char *string);
 
 //int consult(char *idArticle, Sql_result result);
 //int articles_already_exists(char *username);

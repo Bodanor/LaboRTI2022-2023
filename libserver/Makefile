@@ -2,7 +2,7 @@ NAME        := libserver.a
 
 LIBS_TARGET := ../libsockets/libsockets.a
 
-INCS        := include ../libsockets/include /usr/include/mysql
+INCS        := include ../libsockets/include /usr/include/mysql ../libsqlrequests/include
 
 SRC_DIR     := src
 SRCS        := $(wildcard $(SRC_DIR)/*.c) #Tu prends tout les fichiers SRC_DIR#

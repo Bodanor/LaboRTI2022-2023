@@ -40,7 +40,7 @@ static Server_t server_struct;
 static void load_config_file(int *listening_port, int *max_threads);
 
 
-int Server_init(const unsigned int port, const int threads, const char *configfile)
+int Server_init(const int port, const int threads, const char *configfile)
 {
     struct sigaction A;
     int i;
@@ -64,7 +64,31 @@ int Server_init(const unsigned int port, const int threads, const char *configfi
     /* If a config file is specified, we read it */
     if (configfile != NULL)
         load_config_file(&server_struct.PORT_ACHAT, &server_struct.max_threads);
+    else {
+        
+        printf("No config file provided, using passed parameters\n");
 
+        if (port == -1) {
+        printf("[INFO] no port number passed in parameter. Using the default value : %d\n", DEFAULT_PORT_LISTENING);
+        server_struct.PORT_ACHAT = DEFAULT_PORT_LISTENING;
+        }
+        else {
+            server_struct.PORT_ACHAT = port;
+        }
+
+        if (threads == -1) {
+            printf("[INFO] no threads number passed in parameter. Using the default value : %d\n", DEFAULT_MAX_THREADS);
+            server_struct.max_threads = DEFAULT_MAX_THREADS;
+        }
+
+        else if (threads <= 0) {
+            printf("Bad threads passed in parameter. Using the default value : %d\n", DEFAULT_MAX_THREADS);
+            server_struct.max_threads = DEFAULT_MAX_THREADS;
+        }
+        else {
+            server_struct.max_threads = threads;
+        }
+    }
     
     server_struct.server_socket = Create_server(server_struct.PORT_ACHAT);
 
@@ -76,11 +100,12 @@ int Server_init(const unsigned int port, const int threads, const char *configfi
      for (i = 0; i < server_struct.max_threads; i++)
         pthread_create(&thread, NULL, ClientFunction, NULL);
      
-    return 0;
+    return server_struct.server_socket;
 
 
 }
 /* Really bad code. Update it later...*/
+// TODO : Fix ce truc a la con.
 void load_config_file(int *listening_port, int *max_threads)
 {
     FILE *f_ptr;
@@ -89,35 +114,46 @@ void load_config_file(int *listening_port, int *max_threads)
 
     f_ptr = fopen("config.txt", "r");
     if (f_ptr == NULL) {
+        printf("Could not read config file. Using thefault values !\n");
         *listening_port = DEFAULT_PORT_LISTENING;
         *max_threads = DEFAULT_MAX_THREADS;
     }
     else {
         if (fscanf(f_ptr, "%s = %s", bufr_key, bufr_val) != 2) {
+            printf("[CONFIG] Bad listening port. Using default value :%d.\n", DEFAULT_PORT_LISTENING);
+            printf("[CONFIG] Bad threads. Using default value : %d.\n", DEFAULT_MAX_THREADS);
             *listening_port = DEFAULT_PORT_LISTENING;
             *max_threads = DEFAULT_MAX_THREADS;
         }
         
         if (strcmp(bufr_key, "PORT_LISTEN") == 0) {
             *listening_port = atoi(bufr_val);
-            if (*listening_port == 0)
+            if (*listening_port == 0){
+                printf("[CONFIG] Bad listening port. Using default value :%d.\n", DEFAULT_PORT_LISTENING);
                 *listening_port = DEFAULT_PORT_LISTENING;
+            }
         }
         else {
+            printf("[CONFIG] Bad listening port. Using default value :%d.\n", DEFAULT_PORT_LISTENING);
             *listening_port = DEFAULT_PORT_LISTENING;
         }
 
         if (fscanf(f_ptr, "%s = %s", bufr_key, bufr_val) != 2) {
+            printf("[CONFIG] Bad listening port. Using default value :%d.\n", DEFAULT_PORT_LISTENING);
+            printf("[CONFIG] Bad threads. Using default value : %d.\n", DEFAULT_MAX_THREADS);
             *listening_port = DEFAULT_PORT_LISTENING;
             *max_threads = DEFAULT_MAX_THREADS;
         }
         
         if (strcmp(bufr_key, "MAX_THREADS") == 0) {
             *max_threads = atoi(bufr_val);
-            if (*max_threads == 0)
+            if (*max_threads == 0){
+                printf("[CONFIG] Bad threads. Using default value : %d.\n", DEFAULT_MAX_THREADS);
                 *max_threads = DEFAULT_MAX_THREADS;
+            }
         }
         else {
+            printf("[CONFIG] Bad threads. Using default value : %d.\n", DEFAULT_MAX_THREADS);
             *max_threads = DEFAULT_MAX_THREADS;
         }
 
@@ -148,6 +184,23 @@ void add_client(int client_socket)
     pthread_cond_signal(&server_struct.condAcceptedSockets);
 }
 
+int check_is_number(const char *string)
+{
+    int i;
+
+    for (i = 0; i < (int)strlen(string); i++) {
+        if (isdigit(string[i]) == 0)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void* ClientFunction(void *p)
+{
+
+}
 
 // int articles_already_exists(char *idArticle)
 // {

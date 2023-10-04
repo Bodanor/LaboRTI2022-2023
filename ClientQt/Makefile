@@ -1,9 +1,9 @@
 NAME        := Client
 
-LIBS        := pthread Qt5Widgets Qt5Gui Qt5Core GL sockets ovesp server mysqlclient
-LIBS_TARGET := ../libsockets/libsockets.a ../libovesp/libovesp.a ../libserver/libserver.a /usr/lib64/qt5/mkspecs/linux-g++ /usr/lib64 /usr/include/mysql
+LIBS        := pthread Qt5Widgets Qt5Gui Qt5Core GL sockets ovesp sqlrequests server mysqlclient
+LIBS_TARGET := ../libsockets/libsockets.a ../libsqlrequests/libsqlrequests.a ../libovesp/libovesp.a ../libserver/libserver.a
 
-INCS        := ../libsockets/include ../libserver/include ../libovesp/include . ../Server/include /usr/include/mysql /usr/include/qt5 /usr/include/qt5/QtWidgets /usr/include/qt5/QtGui /usr/include/qt5/QtCore
+INCS        := ../libsockets/include ../libsqlrequests/include ../libserver/include ../libovesp/include . ../Server/include /usr/include/mysql /usr/include/qt5 /usr/include/qt5/QtWidgets /usr/include/qt5/QtGui /usr/include/qt5/QtCore
 
 SRCS        := $(wildcard *.cpp)
 BUILD_DIR   := .build
@@ -38,3 +38,5 @@ $(BUILD_DIR)/%.o: %.cpp
 clean:
 	for f in $(dir $(LIBS_TARGET)); do $(MAKE) -C $$f clean; done
 	$(RM) $(OBJS) $(DEPS) $(NAME)
+
+.PHONY : clean

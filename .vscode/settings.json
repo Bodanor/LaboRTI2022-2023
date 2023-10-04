@@ -11,6 +11,7 @@
         "ovesp.h": "c",
         "server.h": "c",
         "sql_requests.h": "c",
-        "qmainwindow": "cpp"
+        "qmainwindow": "cpp",
+        "stdio.h": "c"
     }
 }

@@ -1,6 +1,6 @@
 NAME        := server
 
-LIBS        := ovesp sockets server sqlrequests mysqlclient
+LIBS        := ovesp server sockets sqlrequests mysqlclient
 LIBS_TARGET := ../libovesp/libovesp.a ../libsockets/libsockets.a ../libsqlrequests/libsqlrequests.a ../libserver/libserver.a
 
 INCS        := 	/usr/include/mysql\

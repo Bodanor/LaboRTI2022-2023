@@ -37,7 +37,8 @@
 #define LOGIN_BAD_REQUEST "BAD_REQUEST"
 #define SERVER_ERROR "SERVER_ERROR"
 
-int OVESP_server(char *request, int client_socket);
+
+int OVESP_server(int client_socket);
 
 /* All client functions */
 
