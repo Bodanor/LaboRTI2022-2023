@@ -21,8 +21,10 @@ int main(int argc, char **argv)
 {
     int port;
     int threads;
+    int i;
 
     port = threads = 0;
+    OVESP_Login("chris", "papa", 0, 0);
 
     const char *optstring = "hp:t:";
     const struct option lopts[] = {
@@ -31,6 +33,7 @@ int main(int argc, char **argv)
         {"threads", required_argument, NULL, 't'}, /* Number of threads to create */
         {NULL, no_argument, NULL, 0}, /* If no arguments, read the config file */
     };
+
 
     int val;
     int index;
@@ -43,12 +46,17 @@ int main(int argc, char **argv)
             case 'h' :
                 show_help_menu();
                 break;
-            case 'p' :
-                while(isdigit())
-                break;
             
             case 't' :
-                break;
+            case 'p' :
+                for (i = 0; i < (int)strlen(optarg); i++)
+                if (isdigit(optarg[i]) == 0)
+                {
+                    printf("Bad argument for the port number. Argument is not a number\n");
+                    return -1;
+                }
+
+            break;
             
         }
         index = -1;

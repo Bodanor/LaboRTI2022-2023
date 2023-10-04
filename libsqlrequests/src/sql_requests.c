@@ -28,7 +28,6 @@ static MYSQL *connexion;
 static pthread_mutex_t mutexDB;
 
 
-
 Sql_result* sql_get_result(char *request_str)
 {
     MYSQL_RES *resultat;

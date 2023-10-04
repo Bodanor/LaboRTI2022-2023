@@ -1,9 +1,13 @@
 NAME        := server
 
-LIBS        := ovesp mysqlclient
-LIBS_TARGET := ../libovesp/libovesp.a
+LIBS        := ovesp sockets server sqlrequests mysqlclient
+LIBS_TARGET := ../libovesp/libovesp.a ../libsockets/libsockets.a ../libsqlrequests/libsqlrequests.a ../libserver/libserver.a
 
-INCS        := include /usr/include/mysql ../libsockets/include ../libserver/include ../libovesp/include /usr/include/mysql
+INCS        := 	/usr/include/mysql\
+				../libovesp/include\
+				../libserver/include\
+				../libsockets/include\
+				../libsqlrequests/include
 
 SRCS        := $(wildcard *.c) #Tu prends tout les fichiers SRC_DIR#
 
@@ -21,9 +25,9 @@ LDLIBS      := $(addprefix -l,$(LIBS))
 RM          := rm -f
 DIR_DUP     = mkdir -p $(@D)
 
-all: $(NAME)
+all: $(LIBS_TARGET) $(NAME)
 
-$(NAME): $(OBJS) $(LIBS_TARGET)
+$(NAME): $(OBJS)
 	$(info Building the final target : $@)
 	$(CC) $(OBJS) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) -o $(NAME)
 
@@ -39,9 +43,9 @@ $(BUILD_DIR)/%.o: %.c
 -include $(DEPS)
 	
 clean:
-	###for f in $(dir $(LIBS_TARGET)); do $(MAKE) -C $$f clean; done
+	for f in $(dir $(LIBS_TARGET)); do $(MAKE) -C $$f clean; done
 	$(RM) $(OBJS) $(DEPS)
 	$(RM) $(NAME)
 
-.PHONY: clean
+.PHONY: clean $(LIBS_TARGET)
 

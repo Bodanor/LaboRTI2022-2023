@@ -17,7 +17,7 @@
 #include <string.h>
 
 #include "sockets.h"
-#include "server.h"
+#include "sql_requests.h"
 
 #define MAX_CLIENTS 100
 

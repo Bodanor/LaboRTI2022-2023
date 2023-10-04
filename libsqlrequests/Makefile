@@ -1,11 +1,11 @@
-NAME        := libovesp.a
+NAME        := libsqlrequests.a
 
-LIBS_TARGET := ../libsockets/libsockets.a ../libsqlrequests/libsqlrequests.a
+LIBS        := mysqlclient
 
-INCS        := include ../libsockets/include ../libsqlrequests/include /usr/include/mysql
+INCS        := include /usr/include/mysql
 
 SRC_DIR     := src
-SRCS        := $(wildcard $(SRC_DIR)/*.c) #Tu prends tout les fichiers SRC_DIR#
+SRCS        := $(wildcard $(SRC_DIR)/*.c)
 
 BUILD_DIR   := .build
 OBJS        := $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -14,7 +14,7 @@ DEPS        := $(OBJS:.o=.d)
 CC          := gcc
 CFLAGS      := -Wall -Wextra -std=gnu89 -g -DDEBUG -MMD -MP
 AR          := ar
-ARFLAGS     := -r -c -s -v
+ARFLAGS     := -r -c -s -v -s
 
 CPPFLAGS    := $(addprefix -I,$(INCS))
 
@@ -27,9 +27,6 @@ all: $(LIBS_TARGET) $(NAME)
 $(NAME): $(OBJS)
 	$(info Making static library : $@)
 	$(AR) $(ARFLAGS) $(NAME) $(OBJS)
-
-$(LIBS_TARGET):
-	-$(MAKE) -C $(@D)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(info Compiling object file : $@)

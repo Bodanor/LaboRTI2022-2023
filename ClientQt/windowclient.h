@@ -3,7 +3,6 @@
 
 #include <QMainWindow>
 extern "C" {
-#include "server.h"
 #include "OVESP.h"
 }
 

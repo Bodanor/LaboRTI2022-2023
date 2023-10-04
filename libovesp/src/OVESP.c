@@ -70,6 +70,126 @@ static int OVESP_RECEIVE(OVESP **reply_tokens, int src_socket);
  */
 static void destroy_OVESP(OVESP *ovesp);
 
+/**
+ * @brief Create a new user inside the connected database.
+ * 
+ * @param username The username to create.
+ * @param password The password to addign to this newly created user.
+ * @return 0 if the user has successfully been added to the database.
+ * @return 1 if the user already exists inside the database.
+ * @return -1 if the user could't be created.
+ */
+
+static int create_new_user(char *username, char *password);
+
+/**
+ * @brief Checks if a username passed in parameter is already inside the database.
+ * 
+ * @param username The username to check.
+ * @return 0 : if the username doesn't exist.
+ * @return 1 : if the username already exists.
+ * @return -1 : if an error occured when retrieving the users from the database.
+ */
+static int username_already_exists(char *username);
+
+/**
+ * @brief Checks the provided username and password against the database.
+ * 
+ * @param username The username to check.
+ * @param password The password to check.
+ * @return 0: if the username and password matches the database. 
+ * @return -1 : if a database error occured or a malloc error occured.
+ * @return 1 : if the username doesnt exist in the database.
+ * @return 2 : if the password doens't match the database one.
+ */
+static int client_check_creds(char *username, char *password);
+
+int username_already_exists(char *username)
+{
+    int i;
+    int x;
+    Sql_result *results;
+
+    /* Get a list of all the users */
+    results = sql_get_all_users();
+    if (results == NULL)
+        return -1;
+    
+    else {
+        /* Iterate all the rows (row numbers) + columns (usernames) and compare*/
+        for(i = 0; i < results->rows; i++) {
+            for (x = 0; x < results->columns_per_row; x++) {
+                /* If the username is found, return 1*/
+                if (strcmp(results->array_request[i][x], username) == 0) {
+                    destroy_sql_result(results); /* Dont forget to free the sql_result */
+                    return 1;
+                }
+            }
+        }
+    }
+    destroy_sql_result(results); /* Dont forget to free the sql_result */
+
+    return 0;
+
+}
+
+int create_new_user(char *username, char *password)
+{
+    int error_check;
+
+    /* If error or user already exist, return 1*/
+    if ((error_check = username_already_exists(username)) < 0 ) {
+        return error_check;
+    }
+    else if (error_check == 1)
+        return 1;
+    else {
+        if ((error_check = sql_add_client(username, password)) < 0 ) {
+            /* Could not create the user*/
+            return -1;
+        }
+
+    }
+    return 0; /* User successfully created */
+}
+
+int client_check_creds(char *username, char *password)
+{
+    int username_exist;
+    int i;
+    int x;
+    Sql_result *results;
+    
+    if ((username_exist = username_already_exists(username)) == -1) {
+        /* Database error */
+        return -1;
+    }
+    else if (username_exist == 0) {
+        /* User doesn't exist in the database, we should create a new one */
+        return 1;
+    }
+    
+    /* User exist in the database, whe have to check the password */
+    results = sql_get_user_password(username);
+    if (results == NULL)
+        return -1;
+
+    else {
+        for(i = 0; i < results->rows; i++) {
+            for (x = 0; x < results->columns_per_row; x++) {
+                /* If the password matches the user return 0 */
+                if (strcmp(results->array_request[i][x], password) == 0) {
+                    destroy_sql_result(results); /* Dont forget to free the sql_result */
+                    return 0;
+                }
+            }
+        }
+    }
+    destroy_sql_result(results); /* Dont forget to free the sql_result */
+    return 2;
+    
+}
+
 int OVESP_RECEIVE(OVESP **reply_tokens, int src_socket)
 {
     int error_check;
@@ -321,6 +441,7 @@ int OVESP_Consult(int idArticle, int server_socket)
 
     if(strcmp(ovesp->tokensData[0], CONSULT_COMMAND) == 0)
     {
+        
 
     }
 }

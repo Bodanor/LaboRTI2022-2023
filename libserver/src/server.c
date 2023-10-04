@@ -19,6 +19,7 @@ struct server_t {
     int accepted_read_index;
     int max_threads;
     int PORT_ACHAT;
+    int server_socket;
 
 };
 
@@ -39,12 +40,11 @@ static Server_t server_struct;
 static void load_config_file(int *listening_port, int *max_threads);
 
 
-int Server_init(void)
+int Server_init(const unsigned int port, const int threads, const char *configfile)
 {
     struct sigaction A;
-    int server_socket = 0;
     int i;
-    /* pthread_t thread; */
+    pthread_t thread;
 
     A.sa_flags = 0;
     sigemptyset(&A.sa_mask);
@@ -61,19 +61,22 @@ int Server_init(void)
     pthread_mutex_init(&server_struct.mutexAcceptedSockets, NULL);
     pthread_cond_init(&server_struct.condAcceptedSockets, NULL);
 
-    load_config_file(&server_struct.PORT_ACHAT, &server_struct.max_threads);
+    /* If a config file is specified, we read it */
+    if (configfile != NULL)
+        load_config_file(&server_struct.PORT_ACHAT, &server_struct.max_threads);
 
-    server_socket = Create_server(server_struct.PORT_ACHAT);
+    
+    server_struct.server_socket = Create_server(server_struct.PORT_ACHAT);
 
     for(i = 0; i < MAX_QUEUE; i++)
         server_struct.AcceptedSockets[i] = -1;
 
     printf("Creating threads pool of size (%d)\n", server_struct.max_threads);
     
-    /* for (i = 0; i < max_threads; i++)
+     for (i = 0; i < server_struct.max_threads; i++)
         pthread_create(&thread, NULL, ClientFunction, NULL);
-     */
-    return server_socket;
+     
+    return 0;
 
 
 }
@@ -127,7 +130,6 @@ void load_config_file(int *listening_port, int *max_threads)
 }
  */
 
-
 void add_client(int client_socket)
 {
     pthread_mutex_lock(&server_struct.mutexAcceptedSockets);
@@ -146,140 +148,52 @@ void add_client(int client_socket)
     pthread_cond_signal(&server_struct.condAcceptedSockets);
 }
 
-int username_already_exists(char *username)
-{
-    int i;
-    int x;
-    Sql_result *results;
 
-    /* Get a list of all the users */
-    results = sql_get_all_users();
-    if (results == NULL)
-        return -1;
+// int articles_already_exists(char *idArticle)
+// {
+//     int i;
+//     int x;
+//     Sql_result *results;
+
+//     /* Get a list of all the users */
+//     results = sql_get_all_articles();
+//     if (results == NULL)
+//         return -1;
     
-    else {
-        /* Iterate all the rows (row numbers) + columns (usernames) and compare*/
-        for(i = 0; i < results->rows; i++) {
-            for (x = 0; x < results->columns_per_row; x++) {
-                /* If the username is found, return 1*/
-                if (strcmp(results->array_request[i][x], username) == 0) {
-                    destroy_sql_result(results); /* Dont forget to free the sql_result */
-                    return 1;
-                }
-            }
-        }
-    }
-    destroy_sql_result(results); /* Dont forget to free the sql_result */
+//     else {
+//         /* Iterate all the rows (row numbers) + columns (usernames) and compare*/
+//         for(i = 0; i < results->rows; i++) {
+//             for (x = 0; x < results->columns_per_row; x++) {
+//                 /* If the username is found, return 1*/
+//                 if (strcmp(results->array_request[i][x], idArticle) == 0) {
+//                     destroy_sql_result(results); /* Dont forget to free the sql_result */
+//                     return 1;
+//                 }
+//             }
+//         }
+//     }
+//     /*Je me pose une question ? Etant donné qu'on check qu'une seule colonne du tab 
+//     Est-ce nécessaire de faire deux boucles ? on pourrait simplement check chaque colonne et ce serait bon ainsi non ?*/
+//     destroy_sql_result(results); /* Dont forget to free the sql_result */
 
-    return 0;
-
-}
-int create_new_user(char *username, char *password)
-{
-    int error_check;
-
-    /* If error or user already exist, return 1*/
-    if ((error_check = username_already_exists(username)) < 0 ) {
-        return error_check;
-    }
-    else if (error_check == 1)
-        return 1;
-    else {
-        if ((error_check = sql_add_client(username, password)) < 0 ) {
-            /* Could not create the user*/
-            return -1;
-        }
-
-    }
-    return 0; /* User successfully created */
-}
-
-int client_check_creds(char *username, char *password)
-{
-    int username_exist;
-    int i;
-    int x;
-    Sql_result *results;
+//     return 0;
+// }
+// int consult(char *idArticle, Sql_result **result)
+// {
+//     int i;
+//     Sql_result *results;
     
-    if ((username_exist = username_already_exists(username)) == -1) {
-        /* Database error */
-        return -1;
-    }
-    else if (username_exist == 0) {
-        /* User doesn't exist in the database, we should create a new one */
-        return 1;
-    }
-    
-    /* User exist in the database, whe have to check the password */
-    results = sql_get_user_password(username);
-    if (results == NULL)
-        return -1;
+//     results  = sql_get_article(idArticle);
 
-    else {
-        for(i = 0; i < results->rows; i++) {
-            for (x = 0; x < results->columns_per_row; x++) {
-                /* If the password matches the user return 0 */
-                if (strcmp(results->array_request[i][x], password) == 0) {
-                    destroy_sql_result(results); /* Dont forget to free the sql_result */
-                    return 0;
-                }
-            }
-        }
-    }
-    destroy_sql_result(results); /* Dont forget to free the sql_result */
-    return 2;
-    
-}
-int articles_already_exists(char *idArticle)
-{
-    int i;
-    int x;
-    Sql_result *results;
+//     if ((i = articles_already_exists(idArticle)) == -1) {
+//         /* Database error */
+//         return -1;
+//     }
+//     else if (i == 0) 
+//         return 1;
 
-    /* Get a list of all the users */
-    results = sql_get_all_articles();
-    if (results == NULL)
-        return -1;
-    
-    else {
-        /* Iterate all the rows (row numbers) + columns (usernames) and compare*/
-        for(i = 0; i < results->rows; i++) {
-            for (x = 0; x < results->columns_per_row; x++) {
-                /* If the username is found, return 1*/
-                if (strcmp(results->array_request[i][x], idArticle) == 0) {
-                    destroy_sql_result(results); /* Dont forget to free the sql_result */
-                    return 1;
-                }
-            }
-        }
-    }
-    /*Je me pose une question ? Etant donné qu'on check qu'une seule colonne du tab 
-    Est-ce nécessaire de faire deux boucles ? on pourrait simplement check chaque colonne et ce serait bon ainsi non ?*/
-    destroy_sql_result(results); /* Dont forget to free the sql_result */
+//     results = sql_get_article(idArticle);
+//     *result = results;
 
-    return 0;
-}
-int consult(char *idArticle, char *Article)
-{
-    int i;
-    Sql_result *results;
-
-    results  = sql_get_article(idArticle);
-
-    if ((i = username_already_exists(idArticle)) == -1) {
-        /* Database error */
-        return -1;
-    }
-    else if (i == 0) 
-        return 1;
-
-    results = sql_get_article(idArticle);
-    Article = *results->array_request;/*doute ici je veux juste que le pointeur Article pointe vers le résultat de la requete */
-
-    destroy_sql_result(results); /* Dont forget to free the sql_result */
-
-    return 0;
-}
-
-
-/* Server destroy function ?*/
+//     return 0;
+// }

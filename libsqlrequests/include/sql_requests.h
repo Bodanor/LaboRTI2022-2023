@@ -30,7 +30,6 @@ typedef struct Sql_t{
     char ***array_request;
 } Sql_result;
 
-
 /**
  * @brief Initiliaze the sql requests that is a mutex and check. 
  * if the connection can be done witht the database.
@@ -67,6 +66,8 @@ Sql_result* sql_get_user_password(char *username);
  * @return NULL : a database error occured. 
  */
 Sql_result* sql_get_all_users(void);
+
+
 
 /**
  * @brief deallocate memory for the after a sql request.
