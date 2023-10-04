@@ -9,8 +9,8 @@ void show_help_menu (void);
 
 void show_help_menu(void)
 {
-    printf("Usage : server [OPTION]\n");
-    printf("Example : server -p 4444 -t 10\n\n");
+    printf("Usage : server [OPTIONS]\n");
+    printf("Example : server -p [PORT NUMBER] -t [THREADS_NUMBERS]\n\n");
     printf("Options available :\n");
     printf("-p, --port\t PORT to use when the server is listening.\n");
     printf("-t, --threads\t THREADS Pool the server will create for the clients.\n");
@@ -19,7 +19,12 @@ void show_help_menu(void)
 
 int main(int argc, char **argv)
 {
-    const char *optstring = ":hp:t:";
+    int port;
+    int threads;
+
+    port = threads = 0;
+
+    const char *optstring = "hp:t:";
     const struct option lopts[] = {
         {"help", no_argument, NULL, 'h'}, /* Print the help menu */
         {"port", required_argument, NULL, 'p'}, /* Required the port number to listen to */
@@ -39,24 +44,18 @@ int main(int argc, char **argv)
                 show_help_menu();
                 break;
             case 'p' :
-
+                while(isdigit())
                 break;
             
             case 't' :
                 break;
-            case ':':
-                printf("Missing argument for '%c' option.\n", optopt);
-                break;
-            case '?':
-                printf("Unknown option: '%c'. Ignoring it.\n", optopt);
-                break;
+            
         }
         index = -1;
-
         
     }
 
-    int server_socket;
+    /* int server_socket;
     int client_socket;
     Message *msg;
 
@@ -70,5 +69,5 @@ int main(int argc, char **argv)
         
     }
 
-    return 0;
+    return 0; */
 }
