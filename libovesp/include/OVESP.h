@@ -37,6 +37,16 @@
 #define LOGIN_BAD_REQUEST "BAD_REQUEST"
 #define SERVER_ERROR "SERVER_ERROR"
 
+#define CONSULT_FAIL "CONSULT#FAIL"
+#define DELI ":-)"
+
+
+typedef struct ovesp_t {
+    ssize_t rows;
+    ssize_t columns_per_row;
+    char ***data;
+} OVESP;
+
 
 int OVESP_server(int client_socket);
 
@@ -60,7 +70,7 @@ int OVESP_server(int client_socket);
  * @return -4 : If the server sent a bad reply. Could be a memory error from the server.
  */
 int OVESP_Login(const char *user, const char *password, const char new_user_flag, int server_socket);
-int OVESP_Consult(int idArticle, int server_socket);
+int OVESP_Consult(int idArticle, int server_socket, OVESP *result);
 int OVESP_Achat(int idArticle, int quantite, int server_socket);
 int OVESP_Caddie(int server_socket);
 int OVESP_Cancel(int idArticle, int server_socket);
