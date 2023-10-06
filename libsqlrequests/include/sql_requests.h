@@ -24,6 +24,8 @@
 #define SQL_PASS "PassStudent1_"
 #define SQL_DB "PourStudent"
 
+#define SQL_DB_ERROR -1
+
 typedef struct Sql_t{
     ssize_t rows;
     ssize_t columns_per_row;
@@ -35,39 +37,45 @@ typedef struct Sql_t{
  * if the connection can be done witht the database.
  * 
  * @return 0 : if the initilization is successfull.
- * @return -1 : if connection to the database has failed. 
+ * @return SQL_DB_ERROR : if connection to the database has failed. 
  */
 int sql_requests_init(void);
 
-/**
- * @brief Function to add a new user to the database.
- * 
- * @param username username for the new client.
- * @param password password fot the new client.
- * @return 0 : If the user has successfully been added to the database.
- * @return -1: If the database returned an error.
- */
-int sql_add_client(char *username, char *password);
 
 /**
- * @brief return the password for the given username.
+ * @brief Create a new user inside the connected database.
  * 
- * @param username : The username password to return.
- * @return Sql_result* : containing the password.
- * @return NULL : If the password could be retreived. Possible non-existing user
- * or database error.
+ * @param username The username to create.
+ * @param password The password to addign to this newly created user.
+ * @return 0 if the user has successfully been added to the database.
+ * @return 1 if the user already exists inside the database.
+ * @return SQL_DB_ERROR if the user could't be created.
  */
-Sql_result* sql_get_user_password(char *username);
+
+int sql_create_new_user(char *username, char *password);
 
 /**
- * @brief return all the users inside the database.
+ * @brief Checks the creds for a given username and password inside the database.
  * 
- * @return Sql_result* : containing all the users.
- * @return NULL : a database error occured. 
+ * @param username The username to check in the database.
+ * @param password The password to check in the database.
+ * @return 0 : The password and the username matches.
+ * @return 1 : The username doesn't exists in the database.
+ * @return 2 : The password doesn't match the username.
+ * @return SQL_DB_ERROR : An error in the database occured. 
  */
-Sql_result* sql_get_all_users(void);
+int sql_client_check_creds(char *username, char *password);
 
-
+/**
+ * @brief 
+ * 
+ * @param idArticle The article fields whose ID is @param idArticle.
+ * @param result a pointer that will be allocated and contains the articles's fields whose ID is @param idArticle.
+ * @return 0 : The article could be return and the pointer has been allocated with the results.
+ * @return 1 : The article is not in the database.
+ * @return SQL_DB_ERROR : An error in the database or malloc error occured. 
+ */
+int sql_consult(char *idArticle, Sql_result **result);
 
 /**
  * @brief deallocate memory for the after a sql request.
@@ -75,8 +83,5 @@ Sql_result* sql_get_all_users(void);
  * @param request the request to destroy from memory.
  */
 void destroy_sql_result(Sql_result *request);
-
-Sql_result* sql_get_article(char *idArticle);
-Sql_result* sql_get_all_articles(void);
 
 #endif 

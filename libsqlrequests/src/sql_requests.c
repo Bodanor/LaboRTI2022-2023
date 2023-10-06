@@ -21,12 +21,93 @@
  */
 static Sql_result* sql_get_result(char *request_str);
 
+/**
+ * @brief Function to add a new user to the database.
+ * 
+ * @param username username for the new client.
+ * @param password password fot the new client.
+ * @return 0 : If the user has successfully been added to the database.
+ * @return SQL_DB_ERROR: If the database returned an error.
+ */
+int sql_add_client(char *username, char *password);
+
+/**
+ * @brief return all the users inside the database.
+ * 
+ * @return Sql_result* : containing all the users.
+ * @return NULL : a database error occured. 
+ */
+static Sql_result* sql_get_all_users(void);
+
+/**
+ * @brief return all the articles inside the database.
+ * 
+ * @return Sql_result* : containing all the articles.
+ * @return NULL : a database error occured. 
+ */
+static Sql_result* sql_get_all_articles(void);
+
+/**
+ * @brief return the password for the given username.
+ * 
+ * @param username : The username password to return.
+ * @return Sql_result* : containing the password.
+ * @return NULL : database error or malloc error.
+ */
+static Sql_result* sql_get_user_password(char *username);
+
+
+/**
+ * @brief Checks if a username already exists in the database
+ * 
+ * @param username The username to check against the database.
+ * @return 0 : The username is present in the database.
+ * @return 1 : The username is not in the database.
+ * @return SQL_DB_ERROR : An error in the database occured. 
+ */
+static int sql_username_already_exists(char *username);
+
+/**
+ * @brief Checks if an article is present in the database.
+ * 
+ * @param idArticle The id of the article to check.
+ * @param result Pointer that stores the sql_query result.
+ * @return 0 : The article is in the database.
+ * @return 1 : The article is not the database.
+ * @return SQL_DB_ERROR : An error in the database occured. 
+ */
+static int sql_articles_already_exists(char *username);
+
+/**
+ * @brief Return article for the given id.
+ * 
+ * @param idArticle The Id of the article to return.
+ * @return Sql_result* : Containing the article fields of the given article ID.
+ * @return NULL : database error or malloc error.
+ */
+static Sql_result* sql_get_article(char *idArticle);
+
+
 /* SQL main connection. Only one connexion*/
 static MYSQL *connexion;
-
 /* Mutex used when a request is sent to the database */
 static pthread_mutex_t mutexDB;
 
+
+
+int sql_requests_init(void)
+{
+    pthread_mutex_init(&mutexDB, NULL);
+
+    connexion = mysql_init(NULL);
+    /* Can we reach the database ? */
+    if (mysql_real_connect(connexion, SQL_HOST, SQL_USER, SQL_PASS, SQL_DB, 0, 0, 0) == NULL)
+    {
+        fprintf(stderr, "(SERVEUR) Erreur de connexion à la base de données...\n");
+        return SQL_DB_ERROR;
+    }
+    return 0;
+}
 
 Sql_result* sql_get_result(char *request_str)
 {
@@ -106,21 +187,6 @@ Sql_result* sql_get_result(char *request_str)
 }
 
 
-
-int sql_requests_init(void)
-{
-    pthread_mutex_init(&mutexDB, NULL);
-
-    connexion = mysql_init(NULL);
-    /* Can we reach the database ? */
-    if (mysql_real_connect(connexion, SQL_HOST, SQL_USER, SQL_PASS, SQL_DB, 0, 0, 0) == NULL)
-    {
-        fprintf(stderr, "(SERVEUR) Erreur de connexion à la base de données...\n");
-        return -1;
-    }
-    return 0;
-}
-
 Sql_result* sql_get_all_users(void)
 {
     char *request_str = "select login from clients"; /* Request to send */
@@ -141,37 +207,26 @@ Sql_result* sql_get_all_users(void)
     
 }
 
-void destroy_sql_result(Sql_result *request)
+Sql_result* sql_get_all_articles(void)
 {
-    int i;
-    int x;
-    
-    for (i = 0; i < request->rows; i++)
-        for (x = 0; x < request->columns_per_row; x++) {
-            free(request->array_request[i][x]);
-        }
-    free(request->array_request);
-    free(request);
-
-}
-int sql_add_client(char *username, char *password)
-{
-    char request_str[200];
-
-    sprintf(request_str, "insert into clients values (0, \"%s\", \"%s\");", username, password); /* Request to send */
+    char *request_str = "select * from articles"; /* Request to send */
+    Sql_result* results;
 
     pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
-    if (mysql_query(connexion, request_str) != 0) {
+
+    results = sql_get_result(request_str);
+    if (results == NULL) {
         pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
-        return -1;
+        return NULL;
     }
     
-    /* Release the mutex and return 0 */
+    /* Release the mutex and return the request result */
+
     pthread_mutex_unlock(&mutexDB);
-    return 0;
-
-
+    return results;
+    
 }
+
 Sql_result* sql_get_user_password(char *username)
 {
     char request_str[200];
@@ -192,6 +247,7 @@ Sql_result* sql_get_user_password(char *username)
     return results;
 
 }
+
 Sql_result* sql_get_article(char *idArticle)
 {
     char request[200];
@@ -211,22 +267,164 @@ Sql_result* sql_get_article(char *idArticle)
     pthread_mutex_unlock(&mutexDB);
     return results;
 }
-Sql_result* sql_get_all_articles(void)
+
+int sql_username_already_exists(char *username)
 {
-    char *request_str = "select * from articles"; /* Request to send */
-    Sql_result* results;
+    int i;
+    int x;
+    Sql_result *results;
+
+    /* Get a list of all the users */
+    results = sql_get_all_users();
+    if (results == NULL)
+        return SQL_DB_ERROR;
+    
+    else {
+        /* Iterate all the rows (row numbers) + columns (usernames) and compare*/
+        for(i = 0; i < results->rows; i++) {
+            for (x = 0; x < results->columns_per_row; x++) {
+                /* If the username is found, return 1*/
+                if (strcmp(results->array_request[i][x], username) == 0) {
+                    destroy_sql_result(results); /* Dont forget to free the sql_result */
+                    return 0;
+                }
+            }
+        }
+    }
+    destroy_sql_result(results); /* Dont forget to free the sql_result */
+
+    return 1;
+
+}
+
+int sql_articles_already_exists(char *idArticle)
+{
+    int i;
+    int x;
+    Sql_result *results;
+
+    /* Get a list of all the users */
+    results = sql_get_all_articles();
+    if (results == NULL)
+        return SQL_DB_ERROR;
+    
+    else {
+        /* Iterate all the rows (row numbers) + columns (usernames) and compare*/
+        for(i = 0; i < results->rows; i++) {
+            for (x = 0; x < results->columns_per_row; x++) {
+                /* If the username is found, return 1*/
+                if (strcmp(results->array_request[i][x], idArticle) == 0) {
+                    destroy_sql_result(results); /* Dont forget to free the sql_result */
+                    return 0;
+                }
+            }
+        }
+    }
+    destroy_sql_result(results);
+
+    return 1;
+}
+
+int sql_add_client(char *username, char *password)
+{
+    char request_str[200];
+
+    sprintf(request_str, "insert into clients values (0, \"%s\", \"%s\");", username, password); /* Request to send */
 
     pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
-
-    results = sql_get_result(request_str);
-    if (results == NULL) {
+    if (mysql_query(connexion, request_str) != 0) {
         pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
-        return NULL;
+        return SQL_DB_ERROR;
     }
     
-    /* Release the mutex and return the request result */
-
+    /* Release the mutex and return 0 */
     pthread_mutex_unlock(&mutexDB);
-    return results;
+    return 0;
+
+
+}
+
+int sql_create_new_user(char *username, char *password)
+{
+    int error_check;
+
+    /* If error or user already exist, return 1*/
+    if ((error_check = sql_username_already_exists(username)) != 0 ) {
+        return error_check;
+    }
     
+    else {
+        if (sql_add_client(username, password) != 0 ) {
+            /* Could not create the user*/
+            return SQL_DB_ERROR;
+        }
+
+    }
+    return 0; /* User successfully created */
+}
+
+int sql_client_check_creds(char *username, char *password)
+{
+    int error_check;
+    int i;
+    int x;
+    Sql_result *results;
+    
+    results = NULL;
+
+    if ((error_check = sql_username_already_exists(username)) != 0) {
+        /* Database error */
+        return error_check;
+    }
+    
+    /* User exist in the database, whe have to check the password */
+    results = sql_get_user_password(username);
+    if (results == NULL)
+        return SQL_DB_ERROR;
+
+    else {
+        for(i = 0; i < results->rows; i++) {
+            for (x = 0; x < results->columns_per_row; x++) {
+                /* If the password matches the user return 0 */
+                if (strcmp(results->array_request[i][x], password) == 0) {
+                    destroy_sql_result(results); /* Dont forget to free the sql_result */
+                    return 0;
+                }
+            }
+        }
+    }
+    destroy_sql_result(results); /* Dont forget to free the sql_result */
+    return 2;
+    
+}
+
+int sql_consult(char *idArticle, Sql_result **result)
+{
+    int error_check;
+    
+    *result = NULL;
+
+    if ((error_check = sql_articles_already_exists(idArticle)) != 0) {
+        /* Database error */
+        return error_check;
+    }
+    *result  = sql_get_article(idArticle);
+    if (*result == NULL)
+        return SQL_DB_ERROR;
+
+    return 0;
+}
+
+void destroy_sql_result(Sql_result *request)
+{
+    int i;
+    int x;
+    
+    for (i = 0; i < request->rows; i++)
+        for (x = 0; x < request->columns_per_row; x++) {
+            free(request->array_request[i][x]);
+        }
+    free(request->array_request);
+    free(request);
+
 }
