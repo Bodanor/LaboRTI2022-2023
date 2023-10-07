@@ -349,8 +349,8 @@ int sql_create_new_user(char *username, char *password)
     int error_check;
 
     /* If error or user already exist, return 1*/
-    if ((error_check = sql_username_already_exists(username)) != 0 ) {
-        return error_check;
+    if ((error_check = sql_username_already_exists(username)) == 0) {
+        return 1;
     }
     
     else {
