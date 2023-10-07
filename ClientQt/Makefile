@@ -1,5 +1,7 @@
 NAME        := Client
 
+BIN_DIR := ../bin
+
 LIBS        := pthread Qt5Widgets Qt5Gui Qt5Core GL sockets mysqlclient
 LIBS_TARGET := ../lib/libsockets/libsockets.a
 
@@ -41,11 +43,12 @@ LDLIBS      := $(addprefix -l,$(LIBS))
 RM          := rm -f
 DIR_DUP     = mkdir -p $(@D)
 
-all: $(LIBS_TARGET) $(NAME)
+all: $(LIBS_TARGET) $(BIN_DIR)/$(NAME)
 
-$(NAME): $(OBJS)
+$(BIN_DIR)/$(NAME): $(OBJS)
 	$(info Building the final target : $@)
-	$(CC) $(OBJS) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) -o $(NAME)
+	$(DIR_DUP)
+	$(CC) $(OBJS) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) -o $@
 
 
 $(LIBS_TARGET):
@@ -66,7 +69,7 @@ $(BUILD_DIR)/%.o: %.cpp
 clean:
 	for f in $(dir $(LIBS_TARGET)); do $(MAKE) -C $$f clean; done
 	$(RM) $(OBJS) $(DEPS)
-	$(RM) $(NAME)
+	$(RM) $(BIN_DIR)/$(NAME)
 
 .PHONY: clean $(LIBS_TARGET)
 
