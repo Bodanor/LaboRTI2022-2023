@@ -73,7 +73,7 @@ static int sql_username_already_exists(char *username);
  * @param idArticle The id of the article to check.
  * @param result Pointer that stores the sql_query result.
  * @return 0 : The article is in the database.
- * @return 1 : The article is not the database.
+ * @return 1 : The article is not the database
  * @return SQL_DB_ERROR : An error in the database occured. 
  */
 static int sql_articles_already_exists(char *username);
@@ -86,6 +86,9 @@ static int sql_articles_already_exists(char *username);
  * @return NULL : database error or malloc error.
  */
 static Sql_result* sql_get_article(char *idArticle);
+static Sql_result* sql_article_get_stock(char *idArticle);
+int sql_achat_possible(char* idArticle, char* quantity);
+static Sql_result* sql_achat_article(char *idArticle, char *quantity);
 
 
 /* SQL main connection. Only one connexion*/
@@ -209,7 +212,7 @@ Sql_result* sql_get_all_users(void)
 
 Sql_result* sql_get_all_articles(void)
 {
-    char *request_str = "select * from articles"; /* Request to send */
+    char *request_str = "select id from articles"; /* Request to send */
     Sql_result* results;
 
     pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
@@ -253,7 +256,7 @@ Sql_result* sql_get_article(char *idArticle)
     char request[200];
     Sql_result *results;
     /*Il faut créer la table article */
-    sprintf(request, "select * from article where id = %s;", idArticle);
+    sprintf(request, "select * from articles where id = %s;", idArticle);
 
     pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
 
@@ -268,10 +271,29 @@ Sql_result* sql_get_article(char *idArticle)
     return results;
 }
 
+static Sql_result* sql_article_get_stock(char *idArticle)
+{
+    char request[200];
+    Sql_result *results;
+    
+    sprintf(request, "select stock from articles where id = %s;", idArticle);
+
+    pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
+
+    results = sql_get_result(request);
+    if (results == NULL) {
+        pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
+        return NULL;
+    }
+    
+    /* Release the mutex and return the request result */
+    pthread_mutex_unlock(&mutexDB);
+    return results;
+
+}
 int sql_username_already_exists(char *username)
 {
     int i;
-    int x;
     Sql_result *results;
 
     /* Get a list of all the users */
@@ -282,16 +304,15 @@ int sql_username_already_exists(char *username)
     else {
         /* Iterate all the rows (row numbers) + columns (usernames) and compare*/
         for(i = 0; i < results->rows; i++) {
-            for (x = 0; x < results->columns_per_row; x++) {
-                /* If the username is found, return 1*/
-                if (strcmp(results->array_request[i][x], username) == 0) {
-                    destroy_sql_result(results); /* Dont forget to free the sql_result */
-                    return 0;
-                }
+            /* If the username is found, return 1*/
+            if (strcmp(results->array_request[i][0], username) == 0) {
+                sql_destroy_result(results); /* Dont forget to free the sql_result */
+                return 0;
             }
+            
         }
     }
-    destroy_sql_result(results); /* Dont forget to free the sql_result */
+    sql_destroy_result(results); /* Dont forget to free the sql_result */
 
     return 1;
 
@@ -300,7 +321,7 @@ int sql_username_already_exists(char *username)
 int sql_articles_already_exists(char *idArticle)
 {
     int i;
-    int x;
+
     Sql_result *results;
 
     /* Get a list of all the users */
@@ -311,16 +332,15 @@ int sql_articles_already_exists(char *idArticle)
     else {
         /* Iterate all the rows (row numbers) + columns (usernames) and compare*/
         for(i = 0; i < results->rows; i++) {
-            for (x = 0; x < results->columns_per_row; x++) {
-                /* If the username is found, return 1*/
-                if (strcmp(results->array_request[i][x], idArticle) == 0) {
-                    destroy_sql_result(results); /* Dont forget to free the sql_result */
-                    return 0;
-                }
+            /* If the article ID is found, return 0*/
+            if (strcmp(results->array_request[i][0], idArticle) == 0) {
+                sql_destroy_result(results); /* Dont forget to free the sql_result */
+                return 0;
             }
+            
         }
     }
-    destroy_sql_result(results);
+    sql_destroy_result(results);
 
     return 1;
 }
@@ -340,8 +360,6 @@ int sql_add_client(char *username, char *password)
     /* Release the mutex and return 0 */
     pthread_mutex_unlock(&mutexDB);
     return 0;
-
-
 }
 
 int sql_create_new_user(char *username, char *password)
@@ -387,13 +405,13 @@ int sql_client_check_creds(char *username, char *password)
             for (x = 0; x < results->columns_per_row; x++) {
                 /* If the password matches the user return 0 */
                 if (strcmp(results->array_request[i][x], password) == 0) {
-                    destroy_sql_result(results); /* Dont forget to free the sql_result */
+                    sql_destroy_result(results); /* Dont forget to free the sql_result */
                     return 0;
                 }
             }
         }
     }
-    destroy_sql_result(results); /* Dont forget to free the sql_result */
+    sql_destroy_result(results); /* Dont forget to free the sql_result */
     return 2;
     
 }
@@ -414,41 +432,91 @@ int sql_consult(char *idArticle, Sql_result **result)
 
     return 0;
 }
-int check_articles(char *idArticle, char *quantite, Sql_result **result)
+
+/**
+ * @brief Function to check if an article can be bought by it's quantity.
+ * 
+ * @param idArticle The article ID to buy.
+ * @param quantity The quantity to buy. 
+ * @return 0 : The article cannot be bought
+ * @return 1 : The article can be bought.
+ * @return SQL_DB_ERROR : A database error occured.
+ */
+int sql_achat_possible(char *idArticle, char *quantity)
+{
+    Sql_result*results;
+    int possible;
+
+    results = sql_article_get_stock(idArticle);
+    if (results == NULL)
+        return SQL_DB_ERROR;
+
+    if (atoi(quantity) > atoi(results->array_request[0][0]))
+        possible = 0;
+    else
+        possible = 1;
+
+    sql_destroy_result(results);
+    return possible;
+}
+
+/**
+ * @brief Buy an item from the database and update it.
+ * 
+ * @param idArticle The article Id to buy.
+ * @param quantity The quantity to buy.
+ * @return Sql_result A pointer to the updated bought article.
+ * @return NULL : If a database or malloc error occured.
+ */
+Sql_result* sql_achat_article(char *idArticle, char *quantity)
 {
     char request_str[200];
-    
+    Sql_result*results;
+
+    sprintf(request_str, "update articles set stock =stock-%d where id=%d", atoi(quantity), atoi(idArticle));
+
     pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
     if (mysql_query(connexion, request_str) != 0) {
         pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
-        return SQL_DB_ERROR;
+        return NULL;
     }
-    else
-    {
-        if(atoi((*result)->array_request[0][3])>=atoi(quantite))
-        {
-            sprintf(request_str, "update UNIX_FINAL set stock =stock-%d where id=%d", atoi(quantite), atoi(idArticle));
-            if (mysql_query(connexion, request_str) != 0) {
-                pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
-                return SQL_DB_ERROR;
-            }
-            else
-            {
-                /*Success*/
-                *result  = sql_get_article(idArticle);
-            }  
-        }
-        else    
-        {
-            /*quantite insufisante*/
-            return 0;
-        }  
-    }
-    /* Release the mutex and return 0 */
+    
+    /* Release the mutex */
     pthread_mutex_unlock(&mutexDB);
+
+    results = sql_get_article(idArticle);
+    if (results == NULL)
+        return NULL;
+    
+    return results;
 }
 
-void destroy_sql_result(Sql_result *request)
+int sql_achat(char *idArticle, char *quantite, Sql_result **result)
+{
+    int error_check;
+
+    *result = NULL;
+
+    if ((error_check = sql_articles_already_exists(idArticle)) == 1 || error_check == SQL_DB_ERROR) {
+        /* Database error */
+        return error_check;
+    }
+
+    if ((error_check = sql_achat_possible(idArticle, quantite)) == 0)
+        return 2;
+    else if (error_check == SQL_DB_ERROR)
+        return SQL_DB_ERROR;
+
+    else {
+        *result = sql_achat_article(idArticle, quantite);
+        if (*result == NULL)
+            return SQL_DB_ERROR;
+    }
+
+    return 0;
+}
+
+void sql_destroy_result(Sql_result *request)
 {
     int i;
     int x;

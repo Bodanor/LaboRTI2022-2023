@@ -6,17 +6,15 @@
 using namespace std;
 
 extern WindowClient *w;
-int articlesencours;
+int articlesencours = 0 ;
 
 #define REPERTOIRE_IMAGES "images/"
 
 WindowClient::WindowClient(QWidget *parent) : QMainWindow(parent), ui(new Ui::WindowClient)
 {
-    int error_check;
-    OVESP * ovesp;
-    ovesp = NULL;
-    ovesp = (OVESP *)malloc(sizeof(OVESP));
     ui->setupUi(this);
+
+    setSocket(Server_connect("localhost", 4444));
 
     // Configuration de la table du panier (ne pas modifer)
     ui->tableWidgetPanier->setColumnCount(3);
@@ -39,9 +37,8 @@ WindowClient::WindowClient(QWidget *parent) : QMainWindow(parent), ui(new Ui::Wi
 
     // Exemples à supprimer
     //setArticle("pommes", 5.53, 18, "pommes.jpg");
-    ajouteArticleTablePanier("cerises", 8.96, 2);
-    articlesencours = 0;
-    error_check = OVESP_Consult(articlesencours, getSocket(), ovesp);
+    //ajouteArticleTablePanier("cerises", 8.96, 2);
+    //articlesencours = 1;
 
 }
 
@@ -290,8 +287,8 @@ void WindowClient::closeEvent(QCloseEvent *event)
 void WindowClient::on_pushButtonLogin_clicked()
 {
     int error_check;
-    setSocket(Server_connect("94.106.243.226", 4444));
-    
+    OVESP *result;
+
     error_check = OVESP_Login(getNom(), getMotDePasse(), isNouveauClientChecked(), getSocket());
     printf("Error_check : %d\n" ,error_check);
     switch(error_check)
@@ -299,6 +296,8 @@ void WindowClient::on_pushButtonLogin_clicked()
         case 0 :
             /*Succesfull*/
             dialogueMessage("COOOL", "Tu es connecte le zin");
+            w->loginOK();
+            w->on_pushButtonSuivant_clicked();
             break;
         case 1 :
             /*USERNAME DOESNT EXIS*/ 
@@ -347,23 +346,22 @@ void WindowClient::on_pushButtonLogout_clicked()
 void WindowClient::on_pushButtonSuivant_clicked()
 {
     int error_check;
+    OVESP *res;
 
-    OVESP * ovesp;
-    ovesp = NULL;
-    ovesp = (OVESP *)malloc(sizeof(OVESP));
-    setSocket(Server_connect("94.106.243.226", 4444));
-
-    if(articlesencours <21)
+    int id = articlesencours;
+    
+    error_check = OVESP_Consult(++articlesencours, getSocket(), &res);
+   
+        
+    if(error_check == 1)
     {
-        articlesencours ++;
-        error_check = OVESP_Consult(articlesencours, getSocket(), ovesp);
-        if(error_check == 1)
-        {
-            dialogueErreur("Probleme", "Article introuvable");
-        }
-        else
-            setArticle(*(ovesp)->data[1],atof(*(ovesp)->data[2]),atoi(*(ovesp)->data[3]),*(ovesp)->data[4]);
+        dialogueErreur("Probleme", "Article introuvable");
+        --articlesencours;
     }
+    else {
+        setArticle(res->data[0][1],atof(res->data[0][2]),atoi(res->data[0][3]),res->data[0][4]);
+    }
+    
 
     
 }
@@ -372,25 +370,19 @@ void WindowClient::on_pushButtonSuivant_clicked()
 void WindowClient::on_pushButtonPrecedent_clicked()
 {
     int error_check;
+    OVESP *res;
 
-    OVESP * ovesp;
-    ovesp = NULL;
-    ovesp = (OVESP *)malloc(sizeof(OVESP));
-    setSocket(Server_connect("94.106.243.226", 4444));
 
-    if(articlesencours >0)
+    error_check = OVESP_Consult(--articlesencours, getSocket(), &res);
+    if(error_check == 1)
     {
-        articlesencours --;
-        error_check = OVESP_Consult(articlesencours, getSocket(), ovesp);
-        if(error_check == 1)
-        {
-            dialogueErreur("Probleme", "Article introuvable");
-        }
-        else
-            setArticle(*(ovesp)->data[1],atof(*(ovesp)->data[2]),atoi(*(ovesp)->data[3]),*(ovesp)->data[4]);
+        dialogueErreur("Probleme", "Article introuvable");
+        ++articlesencours;
+    }
+    else {
+        setArticle(res->data[0][1],atof(res->data[0][2]),atoi(res->data[0][3]),res->data[0][4]);
     }
 
-    
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -398,12 +390,27 @@ void WindowClient::on_pushButtonAcheter_clicked()
 {
     int error_check;
 
-    OVESP * ovesp;
-    ovesp = NULL;
-    ovesp = (OVESP *)malloc(sizeof(OVESP));
-    setSocket(Server_connect("94.106.243.226", 4444));
+    OVESP * res;
 
-    error_check = OVESP_Achat(articlesencours, ui->spinBoxQuantite->value(), getSocket(), ovesp);
+    
+    error_check = OVESP_Achat(articlesencours, ui->spinBoxQuantite->value(), getSocket(), &res);
+    if (error_check == 1) {
+        dialogueErreur("Erreur", "l'article n'existe pas !");
+    }
+    else if (error_check == 2) {
+        dialogueErreur("Erreur", "La quantite est trop elevee");
+    }
+    else if (error_check == 3) {
+        dialogueErreur("Erreur", "La quantite ne peux pas valoir 0 !");
+    }
+    else if (error_check == -2) {
+        dialogueErreur("Erreur", "Une erreur interne est survenue !");
+    }
+    else {
+        ajouteArticleTablePanier(res->data[0][1], atof(res->data[0][2]), ui->spinBoxQuantite->value());
+        setArticle(res->data[0][1],atof(res->data[0][2]),atoi(res->data[0][3]),res->data[0][4]);
+    }
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////

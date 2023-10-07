@@ -18,6 +18,7 @@
 
 #include "sockets.h"
 #include "sql_requests.h"
+#include "util.h"
 
 #define MAX_CLIENTS 100
 
@@ -33,18 +34,21 @@
 
 #define LOGIN_BAD_PASSWORD "BAD_PASS"
 #define LOGIN_BAD_USER "BAD_USER"
-#define LOGIN_DB_FAIL "DB_FAIL"
 #define LOGIN_ALREADY_EXISTS "ALREADY_EXISTS"
-#define LOGIN_BAD_REQUEST "BAD_REQUEST"
+#define BAD_REQUEST "BAD_REQUEST"
 #define SERVER_ERROR "SERVER_ERROR"
 
 #define CONSULT_FAIL "CONSULT#-1"
-#define ACHAT_FAIL "ACHAT#-1"
-#define STOCK_INSUFFISANT "ACHAT#0"
+
+#define ACHAT_FAIL "-1"
+#define ACHAT_STOCK_INSUFFISANT "0"
 
 #define OVESP_DISCONNECT -1
 #define OVESP_INVALID_DATA -2
 #define OVESP_BROKEN_SOCK -3
+
+#define OVESP_DB_FAIL "DB_FAIL"
+#define OVESP_BAD_REQUEST "BAD_REQUEST"
 
 typedef struct ovesp_t {
     ssize_t rows;
@@ -67,7 +71,7 @@ int OVESP_server(int client_socket);
 /* All client functions */
 
 /**
- * @brief Login attempt main function logic.
+ * @brief Login client attempt main function logic.
  * 
  * @param user The username to login with.
  * @param password The password to login with.
@@ -85,8 +89,22 @@ int OVESP_server(int client_socket);
  * @return -4 : If the server sent a bad reply. Could be a memory error from the server.
  */
 int OVESP_Login(const char *user, const char *password, const char new_user_flag, int server_socket);
-int OVESP_Consult(int idArticle, int server_socket, OVESP *result);
-int OVESP_Achat(int idArticle, int quantite, int server_socket, OVESP *result);
+int OVESP_Consult(int idArticle, int server_socket, OVESP **result);
+
+/**
+ * @brief Main function to buy article for client.
+ * 
+ * @param idArticle The article Id to buy.
+ * @param quantite The quantity to buy.
+ * @param server_socket The server socket to sent the request to.
+ * @param result Pointer allocated containing the updated article after buy.
+ * @return 0 : If the function has succeeded.
+ * @return 1 : If the article has not been found.
+ * @return 2 : If the quantity is too high.
+ * @return 3 : If a bad request has been sent to the server.
+ * @return -1: Bad response from server.
+ */
+int OVESP_Achat(int idArticle, int quantite, int server_socket, OVESP **result);
 // int OVESP_Caddie(int server_socket);
 // int OVESP_Cancel(int idArticle, int server_socket);
 // int OVESP_Cancel_All(int server_socket);

@@ -21,6 +21,7 @@
 
 #include "sockets.h"
 #include "sql_requests.h"
+#include "util.h"
 /**
  * @brief Main default settings when no config file is to be found.
  * 

@@ -91,18 +91,21 @@ int main(int argc, char **argv)
 
     while (1) {
         client_socket = Accept_connexion(server_socket);
-        error_check = OVESP_server(client_socket);
-        if (error_check == -1) {
-            printf("Client deconnecte \n");
-        }
-        else if (error_check == -2) {
-            printf("Corrupted data\n");
-        }
-        else if (error_check == -3) {
-            printf("I/O error \n");
-        }
-        else if (error_check == -4) {
-            printf("Internal error\n");
+        while (1) {
+            error_check = OVESP_server(client_socket);
+            if (error_check == -1) {
+                printf("Client deconnecte \n");
+                break;
+            }
+            else if (error_check == -2) {
+                printf("Corrupted data\n");
+            }
+            else if (error_check == -3) {
+                printf("I/O error \n");
+            }
+            else if (error_check == -4) {
+                printf("Internal error\n");
+            }
         }
     
     }

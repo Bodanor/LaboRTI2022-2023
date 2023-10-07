@@ -1,4 +1,4 @@
-SUBDIRS := $(wildcard */.)
+SUBDIRS := ClientQt Server
 
 all: $(SUBDIRS)
 

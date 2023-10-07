@@ -184,19 +184,6 @@ void add_client(int client_socket)
     pthread_cond_signal(&server_struct.condAcceptedSockets);
 }
 
-int check_is_number(const char *string)
-{
-    int i;
-
-    for (i = 0; i < (int)strlen(string); i++) {
-        if (isdigit(string[i]) == 0)
-        {
-            return 1;
-        }
-    }
-    return 0;
-}
-
 void* ClientFunction(void *p)
 {
 

@@ -75,13 +75,25 @@ int sql_client_check_creds(char *username, char *password);
  * @return SQL_DB_ERROR : An error in the database or malloc error occured. 
  */
 int sql_consult(char *idArticle, Sql_result **result);
-int check_articles(char *idArticle, char* quantite, Sql_result **result);
 
 /**
  * @brief deallocate memory for the after a sql request.
  * 
  * @param request the request to destroy from memory.
  */
-void destroy_sql_result(Sql_result *request);
+void sql_destroy_result(Sql_result *request);
+
+/**
+ * @brief Main sql achat function.
+ * 
+ * @param idArticle The article ID to buy.
+ * @param quantite The quantity to buy.
+ * @param result Pointer to result which will hold the new Article data.
+ * @return 0 : The function succeeded.
+ * @return 1 : The article does not exist.
+ * @return 2 : The quantity if higher than the one inside the databse.
+ * @return SQL_DB_ERROR : A database error occured.
+ */
+int sql_achat(char *idArticle, char *quantite, Sql_result **result);
 
 #endif 

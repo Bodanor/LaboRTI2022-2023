@@ -13,6 +13,10 @@
         "sql_requests.h": "c",
         "qmainwindow": "cpp",
         "stdio.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "memory_resource": "c",
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp"
     }
 }
