@@ -75,6 +75,7 @@ int sql_client_check_creds(char *username, char *password);
  * @return SQL_DB_ERROR : An error in the database or malloc error occured. 
  */
 int sql_consult(char *idArticle, Sql_result **result);
+int check_articles(char *idArticle, char* quantite, Sql_result **result);
 
 /**
  * @brief deallocate memory for the after a sql request.

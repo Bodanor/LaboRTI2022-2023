@@ -414,6 +414,39 @@ int sql_consult(char *idArticle, Sql_result **result)
 
     return 0;
 }
+int check_articles(char *idArticle, char *quantite, Sql_result **result)
+{
+    char request_str[200];
+    
+    pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
+    if (mysql_query(connexion, request_str) != 0) {
+        pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
+        return SQL_DB_ERROR;
+    }
+    else
+    {
+        if(atoi((*result)->array_request[0][3])>=atoi(quantite))
+        {
+            sprintf(request_str, "update UNIX_FINAL set stock =stock-%d where id=%d", atoi(quantite), atoi(idArticle));
+            if (mysql_query(connexion, request_str) != 0) {
+                pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
+                return SQL_DB_ERROR;
+            }
+            else
+            {
+                /*Success*/
+                *result  = sql_get_article(idArticle);
+            }  
+        }
+        else    
+        {
+            /*quantite insufisante*/
+            return 0;
+        }  
+    }
+    /* Release the mutex and return 0 */
+    pthread_mutex_unlock(&mutexDB);
+}
 
 void destroy_sql_result(Sql_result *request)
 {

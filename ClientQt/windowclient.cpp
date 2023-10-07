@@ -396,6 +396,14 @@ void WindowClient::on_pushButtonPrecedent_clicked()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void WindowClient::on_pushButtonAcheter_clicked()
 {
+    int error_check;
+
+    OVESP * ovesp;
+    ovesp = NULL;
+    ovesp = (OVESP *)malloc(sizeof(OVESP));
+    setSocket(Server_connect("94.106.243.226", 4444));
+
+    error_check = OVESP_Achat(articlesencours, ui->spinBoxQuantite->value(), getSocket(), ovesp);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////

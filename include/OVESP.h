@@ -38,8 +38,9 @@
 #define LOGIN_BAD_REQUEST "BAD_REQUEST"
 #define SERVER_ERROR "SERVER_ERROR"
 
-#define CONSULT_FAIL "CONSULT#FAIL"
-#define ACHAT_FAIL "ACHAT#FAIL"
+#define CONSULT_FAIL "CONSULT#-1"
+#define ACHAT_FAIL "ACHAT#-1"
+#define STOCK_INSUFFISANT "ACHAT#0"
 
 #define OVESP_DISCONNECT -1
 #define OVESP_INVALID_DATA -2
@@ -85,7 +86,7 @@ int OVESP_server(int client_socket);
  */
 int OVESP_Login(const char *user, const char *password, const char new_user_flag, int server_socket);
 int OVESP_Consult(int idArticle, int server_socket, OVESP *result);
-int OVESP_Achat(int idArticle, int quantite, int server_socket);
+int OVESP_Achat(int idArticle, int quantite, int server_socket, OVESP *result);
 // int OVESP_Caddie(int server_socket);
 // int OVESP_Cancel(int idArticle, int server_socket);
 // int OVESP_Cancel_All(int server_socket);
