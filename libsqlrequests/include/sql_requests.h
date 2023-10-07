@@ -51,7 +51,6 @@ int sql_requests_init(void);
  * @return 1 if the user already exists inside the database.
  * @return SQL_DB_ERROR if the user could't be created.
  */
-
 int sql_create_new_user(char *username, char *password);
 
 /**
