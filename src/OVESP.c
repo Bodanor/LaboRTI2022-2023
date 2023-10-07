@@ -254,8 +254,6 @@ int OVESP_SEND(const char *request, int dst_socket)
     return error_check;
 
 }
-
-
 int OVESP_LOGIN_OPERATION(OVESP *request_tokens, int client_socket)
 {   
     int error_check;
@@ -300,6 +298,35 @@ int OVESP_LOGIN_OPERATION(OVESP *request_tokens, int client_socket)
     return OVESP_SEND(buffer, client_socket);
 
 }
+static int OVESP_CONSULT_OPERATION(OVESP *request_tokens, int client_socket)
+{
+    int error_check;
+    char buffer[200];
+    Sql_result *result;
+    OVESP *tokenized_result;
+
+    if ((error_check = consult(request_tokens->data[0][1], &result)) ==-1) {
+         /* Database error */
+         strcpy(buffer, CONSULT_FAIL);
+         OVESP_SEND(CONSULT_FAIL, client_socket);
+         return 1;
+    }
+    else 
+    {
+        /* Trouve */
+        if ((tokenized_result = OVESP_SQL_TO_OVESP(&result, "CONSULT")) == NULL)
+        {
+            OVESP_SEND(CONSULT_FAIL, client_socket);
+            return 1;
+        }
+        else
+        {
+            OVESP_SEND(*(tokenized_result->data), client_socket);
+            return 0;
+        }   
+    }
+}
+
 
 /**
  * @brief Main server function to handle requests
@@ -330,14 +357,13 @@ int OVESP_server(int client_socket)
         }
     }
 
-    // if (strcmp(tokens->tokensData[0], CONSULT_COMMAND) == 0) {
-    //     error_check = OVESP_CONSULT_OPERATION(tokens, client_socket);
-    //     if (error_check < 0) {
-    //         destroyMessage(msg);
-    //         destroy_OVESP(tokens);
-    //         return error_check;
-    //     }
-    // }
+    if (strcmp(request->command, CONSULT_COMMAND) == 0) {
+        error_check = OVESP_CONSULT_OPERATION(request, client_socket);
+        if (error_check < 0) {
+            destroy_OVESP(request);
+            return error_check;
+        }
+    }
     destroy_OVESP(request);
 
     return error_check;
@@ -409,43 +435,84 @@ int OVESP_Login(const char *user, const char *password, const char new_user_flag
 }
 
 
-// static int OVESP_CONSULT_OPERATION(OVESP *request_tokens, int client_socket)
-// {
-//     int error_check;
-//     char buffer[200];
-//     Sql_result *result;
-//     OVESP *tokenized_result;
+int OVESP_Consult(int idArticle, int server_socket, OVESP *result)
+{
+    int error_check;
+    char buffer[50];
+    OVESP *ovesp;
+    char *article;
+    error_check = 0;
 
-//     result = NULL;
+    sprintf(buffer, "%s#%d#", CONSULT_COMMAND, idArticle);
 
-//      for (error_check = 0; error_check < request_tokens->tokens; error_check++)
-//         printf("%s\n", request_tokens->tokensData[error_check]);
-    
-//     error_check = 0;
 
-//     if ((error_check = consult(request_tokens->tokensData[1], &result)) ==-1) {
-//         /* Database error */
-//         strcpy(buffer, CONSULT_FAIL);
-//         OVESP_SEND(CONSULT_FAIL, client_socket);
-//         return 1;
-//     }
-//     else if (error_check == 1) {
-//         /* Trouve */
-//         if ((tokenized_result = OVESP_TOKENIZER(&result, "CONSULT")) == NULL)
-//         {
-//             OVESP_SEND(CONSULT_FAIL, client_socket);
-//             return 1;
-//         }
-//         else
-//         {
-//             OVESP_SEND(*(tokenized_result->tokensData), client_socket);
-//         }
-        
-//     }
-//     else if (error_check == 0) {
-//         strcpy(buffer, CONSULT_FAIL);
-//     }
+    error_check = OVESP_SEND(buffer, server_socket);
+    /* if an error occured we return the return statement from the OVESP_SEND function */
+    if (error_check < 0)
+        return error_check;
 
+
+    error_check = OVESP_RECEIVE(&ovesp, server_socket);
+    if (error_check < 0)
+        return error_check;
+
+    if(strcmp(ovesp->data[0][0], CONSULT_COMMAND) == 0)
+    {
+        ovesp->data[0][1] = ovesp->data[0][1] + 0x30;
+        if(strcmp(ovesp->data[0][1], "-1" ) == 0)
+        {
+            destroy_OVESP(ovesp);
+            return 1;
+        }
+        else
+        {
+            /*result = (OVESP *)malloc(sizeof(OVESP));on allouera la mémoire dans le client ?*/
+            result = ovesp;    
+            destroy_OVESP(ovesp);
+            return 0;   
+        }
+    }
+}
+int OVESP_Achat(int idArticle, int quantite, int server_socket)
+{
+    int error_check;
+    char buffer[50];
+    OVESP *ovesp;
+    char *article;
+    error_check = 0;
+
+    sprintf(buffer, "%s#%d#%d#", ACHAT_COMMAND, idArticle, quantite);
+
+
+    error_check = OVESP_SEND(buffer, server_socket);
+    /* if an error occured we return the return statement from the OVESP_SEND function */
+    if (error_check < 0)
+        return error_check;
+
+
+    error_check = OVESP_RECEIVE(&ovesp, server_socket);
+    if (error_check < 0)
+        return error_check;
+
+    if(strcmp(ovesp->data[0][0], ACHAT_COMMAND) == 0)
+    {
+        ovesp->data[0][1] = ovesp->data[0][1] + 0x30;
+        if(strcmp(ovesp->data[0][1], "-1" ) == 0)
+        {
+            destroy_OVESP(ovesp);
+            return 1;
+        }
+        else
+        {
+            /*result = (OVESP *)malloc(sizeof(OVESP));on allouera la mémoire dans le client ?*/
+               
+            destroy_OVESP(ovesp);
+            return 0;   
+        }
+    }
+
+
+}
 
 // }
 // OVESP* OVESP_RETRIEVE_TOKENS(char *request, const char *commande)
@@ -552,48 +619,6 @@ int OVESP_Login(const char *user, const char *password, const char new_user_flag
 
 //     return tokens;
 
-// }
-
-// int OVESP_Consult(int idArticle, int server_socket, OVESP *result)
-// {
-//     int error_check;
-//     char buffer[50];
-//     OVESP *ovesp;
-//     char *article;
-//     error_check = 0;
-
-//     sprintf(buffer, "%s#%d#", CONSULT_COMMAND, idArticle);
-
-
-//     error_check = OVESP_SEND(buffer, server_socket);
-//     /* if an error occured we return the return statement from the OVESP_SEND function */
-//     if (error_check < 0)
-//         return error_check;
-
-
-//     error_check = OVESP_RECEIVE(&ovesp, server_socket);
-//     if (error_check < 0)
-//         return error_check;
-
-//     if(strcmp(ovesp->tokensData[0], CONSULT_COMMAND) == 0)
-//     {
-//         ovesp->tokensData[1] = ovesp->tokensData[1] + 0x30;
-//         if(strcmp(ovesp->tokensData[1], "-1" ) == 0)
-//         {
-//             destroy_OVESP(ovesp);
-//             return 1;
-//         }
-//         else
-//         {
-//             *article = (char*)malloc((strlen(ovesp->tokensData) + 1)*sizeof(char));
-//             if (*article == NULL)
-//                 return -3;
-//             strcpy(*articles, ovesp->tokensData);
-//             destroy_OVESP(ovesp);
-//             return 0;
-//         }
-
-//     }
 // }
 
 void destroy_OVESP(OVESP *ovesp)

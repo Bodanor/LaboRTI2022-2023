@@ -25,6 +25,7 @@
 #define SUCCESS "OK"
 #define FAIL "KO"
 #define CONSULT_COMMAND "CONSULT"
+#define ACHAT_COMMAND "ACHAT"
 
 #define LOGIN_FAIL(REASON) (LOGIN_COMMAND"#"FAIL"#"REASON)
 #define LOGIN_OK LOGIN_COMMAND"#"SUCCESS
@@ -38,6 +39,7 @@
 #define SERVER_ERROR "SERVER_ERROR"
 
 #define CONSULT_FAIL "CONSULT#FAIL"
+#define ACHAT_FAIL "ACHAT#FAIL"
 
 #define OVESP_DISCONNECT -1
 #define OVESP_INVALID_DATA -2
@@ -82,13 +84,14 @@ int OVESP_server(int client_socket);
  * @return -4 : If the server sent a bad reply. Could be a memory error from the server.
  */
 int OVESP_Login(const char *user, const char *password, const char new_user_flag, int server_socket);
-// int OVESP_Consult(int idArticle, int server_socket, OVESP *result);
-// int OVESP_Achat(int idArticle, int quantite, int server_socket);
+int OVESP_Consult(int idArticle, int server_socket, OVESP *result);
+int OVESP_Achat(int idArticle, int quantite, int server_socket);
 // int OVESP_Caddie(int server_socket);
 // int OVESP_Cancel(int idArticle, int server_socket);
 // int OVESP_Cancel_All(int server_socket);
 // int OVESP_Confirmer(int server_socket);
 // int OVESP_Logout(int server_socket);
+
 
 
 #endif

@@ -6,11 +6,16 @@
 using namespace std;
 
 extern WindowClient *w;
+int articlesencours;
 
 #define REPERTOIRE_IMAGES "images/"
 
 WindowClient::WindowClient(QWidget *parent) : QMainWindow(parent), ui(new Ui::WindowClient)
 {
+    int error_check;
+    OVESP * ovesp;
+    ovesp = NULL;
+    ovesp = (OVESP *)malloc(sizeof(OVESP));
     ui->setupUi(this);
 
     // Configuration de la table du panier (ne pas modifer)
@@ -33,8 +38,11 @@ WindowClient::WindowClient(QWidget *parent) : QMainWindow(parent), ui(new Ui::Wi
     setPublicite("!!! Bienvenue sur le Maraicher en ligne !!!");
 
     // Exemples à supprimer
-    setArticle("pommes", 5.53, 18, "pommes.jpg");
+    //setArticle("pommes", 5.53, 18, "pommes.jpg");
     ajouteArticleTablePanier("cerises", 8.96, 2);
+    articlesencours = 0;
+    error_check = OVESP_Consult(articlesencours, getSocket(), ovesp);
+
 }
 
 WindowClient::~WindowClient()
@@ -338,11 +346,51 @@ void WindowClient::on_pushButtonLogout_clicked()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void WindowClient::on_pushButtonSuivant_clicked()
 {
+    int error_check;
+
+    OVESP * ovesp;
+    ovesp = NULL;
+    ovesp = (OVESP *)malloc(sizeof(OVESP));
+    setSocket(Server_connect("94.106.243.226", 4444));
+
+    if(articlesencours <21)
+    {
+        articlesencours ++;
+        error_check = OVESP_Consult(articlesencours, getSocket(), ovesp);
+        if(error_check == 1)
+        {
+            dialogueErreur("Probleme", "Article introuvable");
+        }
+        else
+            setArticle(*(ovesp)->data[1],atof(*(ovesp)->data[2]),atoi(*(ovesp)->data[3]),*(ovesp)->data[4]);
+    }
+
+    
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void WindowClient::on_pushButtonPrecedent_clicked()
 {
+    int error_check;
+
+    OVESP * ovesp;
+    ovesp = NULL;
+    ovesp = (OVESP *)malloc(sizeof(OVESP));
+    setSocket(Server_connect("94.106.243.226", 4444));
+
+    if(articlesencours >0)
+    {
+        articlesencours --;
+        error_check = OVESP_Consult(articlesencours, getSocket(), ovesp);
+        if(error_check == 1)
+        {
+            dialogueErreur("Probleme", "Article introuvable");
+        }
+        else
+            setArticle(*(ovesp)->data[1],atof(*(ovesp)->data[2]),atoi(*(ovesp)->data[3]),*(ovesp)->data[4]);
+    }
+
+    
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
