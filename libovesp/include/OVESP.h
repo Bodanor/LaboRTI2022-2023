@@ -38,16 +38,27 @@
 #define SERVER_ERROR "SERVER_ERROR"
 
 #define CONSULT_FAIL "CONSULT#FAIL"
-#define DELI ":-)"
 
+#define OVESP_DISCONNECT -1
+#define OVESP_INVALID_DATA -2
+#define OVESP_BROKEN_SOCK -3
 
 typedef struct ovesp_t {
     ssize_t rows;
     ssize_t columns_per_row;
+    char *command;
     char ***data;
 } OVESP;
 
-
+/**
+ * @brief Main server function to handle requests
+ * 
+ * @param client_socket The client socket to receive requests from
+ * @return 0 : If the request has successfully been sent.
+ * @return OVESP_DISCONNECT : If the socket has been disconnected. 
+ * @return OVESP_INVALID_DATA : If a corrupt data has been passed.
+ * @return OVESP_BROKEN_SOCK : If the data could no be received. That doesn't mean that the socket is closed or the connection is broken !
+ */
 int OVESP_server(int client_socket);
 
 /* All client functions */
@@ -58,25 +69,26 @@ int OVESP_server(int client_socket);
  * @param user The username to login with.
  * @param password The password to login with.
  * @param new_user_flag The flag to create a new user.
- * @param server_socket The server socket to try the attempt to.
+ * @param server_socket The server socket to try the login attempt to.
+ * 
  * @return 0 : If the username and password are correct and matches an account.
  * @return 1 : If the username doesn't exist.
  * @return 2: If the password is incorrect.
  * @return 3: If there was a database error.
- * @return 4: If the @param new_user_flag flag has been set and a user already exists under this username.
+ * @return 4: If the new_user_flag flag has been set and a user already exists under this username.
  * @return -1 : If the connection with the socket is lost. Possibly client or server end.
  * @return -2 : If a malloc error occured or the data is corrupted.
  * @return -3 : If an I/O error occured. That doesn't mean that the socket is closed or the connection is broken !
  * @return -4 : If the server sent a bad reply. Could be a memory error from the server.
  */
 int OVESP_Login(const char *user, const char *password, const char new_user_flag, int server_socket);
-int OVESP_Consult(int idArticle, int server_socket, OVESP *result);
-int OVESP_Achat(int idArticle, int quantite, int server_socket);
-int OVESP_Caddie(int server_socket);
-int OVESP_Cancel(int idArticle, int server_socket);
-int OVESP_Cancel_All(int server_socket);
-int OVESP_Confirmer(int server_socket);
-int OVESP_Logout(int server_socket);
+// int OVESP_Consult(int idArticle, int server_socket, OVESP *result);
+// int OVESP_Achat(int idArticle, int quantite, int server_socket);
+// int OVESP_Caddie(int server_socket);
+// int OVESP_Cancel(int idArticle, int server_socket);
+// int OVESP_Cancel_All(int server_socket);
+// int OVESP_Confirmer(int server_socket);
+// int OVESP_Logout(int server_socket);
 
 
 #endif

@@ -12,52 +12,68 @@
  */
 
 
-
 /**
- * @brief Retrieve every token in a request separated by a '#' character.
+ * @brief Convert uint8_t* data to an OVESP structure with rows and columns.
+ * Every time a row begins with the @param command, we know we begin a new row.
  * 
- * @param request The request to retrieve tokens from.
- * @return OVESP* : A pointer to a struct containing all the tokens as well a the number of tokens.
- * @return NULL : If a malloc error occured.
+ * @param data : The source data to read from.
+ * @return OVESP* : Pointer containing the converted data from the @param data pointer.
+ * @return NULL : Malloc error occured.
  */
-static OVESP* OVESP_RETRIEVE_TOKENS(char *request);
+OVESP*OVESP_create_results(uint8_t *data);
 
 /**
- * @brief Send the request to a socket.
+ * @brief Create a string seperate by a '#' for every token based on the OVESP structure.
+ * This function doesn't add a '#' at the end of the string !
  * 
- * @param request The request to send.
- * @param dst_socket The socket to send the request to.
- * @return 0: If successfull.
- * @return -1 : If the socket has been disconnected. 
- * @return -2 : If a bad parameter has been passed to the function.
- * @return -3 : If the data could no be sent. That doesn't mean that the socket is closed or the connection is broken !
+ * @param src_ovsp The source OVESP structure to read from.
+ * @return char* : string containing all the data inside the OVESP separated by a '#' for every token.
+ * @return NULL : Malloc error.
+ */
+char *OVESP_TOKENIZER(OVESP *src_ovsp);
+
+/**
+ * @brief Convert sql results to a OVESP structure
+ * 
+ * @param sql_results the sql results to convert.
+ * @return OVESP* : Pointer containing the converted data from the sql results.
+ * @return NULL : Malloc error occured.
+ */
+OVESP *OVESP_SQL_TO_OVESP(Sql_result *sql_results, const char *command);
+
+/**
+ * @brief Send an OVESP request in form of a string to a socket.
+ * 
+ * @param request The string to request to send.
+ * @param dst_socket The destination socket to send the request to.
+ * @return OVESP_DISCONNECT : If the socket has been disconnected. 
+ * @return OVESP_INVALID_DATA : If a corrupted data has been passed.
+ * @return OVESP_BROKEN_SOCK : If the data could no be received. That doesn't mean that the socket is closed or the connection is broken ! 
  */
 static int OVESP_SEND(const char *request, int dst_socket);
 
 /**
- * @brief Main login logic function for a login request.
+ * @brief Login main logic function.
  * 
- * @param request_tokens Tokens used to perform the connection.
- * @param client_socket The socket used to send a connection status.
- * @return 0: If successfull.
- * @return -1 : If the socket has been disconnected. 
- * @return -2 : If a bad parameter has been passed to the function.
- * @return -3 : If the data could no be sent. That doesn't mean that the socket is closed or the connection is broken !
+ * @param request_tokens A pointer to pointer to OVESP struct that will hold all data from the request.
+ * @param client_socket The client to try logging in.
+ * @return 0 : If the request has successfully been sent.
+ * @return OVESP_DISCONNECT : If the socket has been disconnected. 
+ * @return OVESP_INVALID_DATA : If a corrupt data has been passed.
+ * @return OVESP_BROKEN_SOCK : If the data could no be received. That doesn't mean that the socket is closed or the connection is broken !
+ * 
  */
 static int OVESP_LOGIN_OPERATION(OVESP *request_tokens, int client_socket);
 
-
-static int OVESP_CONSULT_OPERATION(OVESP *request_tokens, int client_socket);
-
 /**
- * @brief Receive a OVESP request and tokenize it.
+ * @brief Receive a OVESP request and create an OVESP structure.
  * 
- * @param reply_tokens A pointer to pointer to OVESP struct that will hold all the tokens from the request.
+ * @param reply_tokens A pointer to pointer to OVESP struct that will hold all data from the request.
  * @param dst_socket The source socket to receive a OVESP request.
  * @return 0 : If the request has successfully been sent.
- * @return -1 : If the socket has been disconnected. 
- * @return -2 : If the data is corruped or a malloc call failed.
- * @return -3 : If the data could no be received. That doesn't mean that the socket is closed or the connection is broken !
+ * @return OVESP_DISCONNECT : If the socket has been disconnected. 
+ * @return OVESP_INVALID_DATA : If the data is corruped or a malloc call failed.
+ * @return OVESP_BROKEN_SOCK : If the data could no be received. That doesn't mean that the socket is closed or the connection is broken !
  * 
  */
 static int OVESP_RECEIVE(OVESP **reply_tokens, int src_socket);
@@ -69,179 +85,139 @@ static int OVESP_RECEIVE(OVESP **reply_tokens, int src_socket);
  */
 static void destroy_OVESP(OVESP *ovesp);
 
-/**
- * @brief Create a new user inside the connected database.
- * 
- * @param username The username to create.
- * @param password The password to addign to this newly created user.
- * @return 0 if the user has successfully been added to the database.
- * @return 1 if the user already exists inside the database.
- * @return -1 if the user could't be created.
- */
+// /**
+//  * @brief Checks the provided username and password against the database.
+//  * 
+//  * @param username The username to check.
+//  * @param password The password to check.
+//  * @return 0: if the username and password matches the database. 
+//  * @return -1 : if a database error occured or a malloc error occured.
+//  * @return 1 : if the username doesnt exist in the database.
+//  * @return 2 : if the password doens't match the database one.
+//  */
 
-static int create_new_user(char *username, char *password);
-
-/**
- * @brief Checks if a username passed in parameter is already inside the database.
- * 
- * @param username The username to check.
- * @return 0 : if the username doesn't exist.
- * @return 1 : if the username already exists.
- * @return -1 : if an error occured when retrieving the users from the database.
- */
-static int username_already_exists(char *username);
-
-/**
- * @brief Checks the provided username and password against the database.
- * 
- * @param username The username to check.
- * @param password The password to check.
- * @return 0: if the username and password matches the database. 
- * @return -1 : if a database error occured or a malloc error occured.
- * @return 1 : if the username doesnt exist in the database.
- * @return 2 : if the password doens't match the database one.
- */
-static int client_check_creds(char *username, char *password);
-static int consult(char *idArticle, Sql_result **result);
-static int articles_already_exists(char *username);
-OVESP* OVESP_TOKENIZER(Sql_result **, char *commande);
-
-int username_already_exists(char *username)
+OVESP*OVESP_create_results(uint8_t *data)
 {
+    OVESP *ovesp_result;
     int i;
-    int x;
-    Sql_result *results;
+    int j;
+    char *tmp_ptr;
 
-    /* Get a list of all the users */
-    results = sql_get_all_users();
-    if (results == NULL)
-        return -1;
+    ovesp_result = (OVESP*)malloc(sizeof(OVESP));
+    if (ovesp_result == NULL)
+        return NULL;
     
-    else {
-        /* Iterate all the rows (row numbers) + columns (usernames) and compare*/
-        for(i = 0; i < results->rows; i++) {
-            for (x = 0; x < results->columns_per_row; x++) {
-                /* If the username is found, return 1*/
-                if (strcmp(results->array_request[i][x], username) == 0) {
-                    destroy_sql_result(results); /* Dont forget to free the sql_result */
-                    return 1;
-                }
+    ovesp_result->data = NULL;
+    tmp_ptr = strtok((char*)data, "#");
+    if (tmp_ptr == NULL) /* If not found, bad request*/
+        return NULL;
+    
+    ovesp_result->command = (char*)malloc(sizeof(char)*(strlen(tmp_ptr) + 1));\
+    if (ovesp_result->command == NULL)
+        return NULL;
+    
+    strcpy(ovesp_result->command, tmp_ptr); /* Copy the command */
+    ovesp_result->rows = 0;
+    ovesp_result->columns_per_row = 0;
+
+    /* Dont touch this, it works !!!!!!!!!!!!!!!!!! */
+
+    for (i = 0; (tmp_ptr = strtok(NULL, "#")); i++) {
+        ovesp_result->data = (char***)realloc(ovesp_result->data, sizeof(char**)*(i + 1));
+        if (ovesp_result->data == NULL)
+            return NULL;
+        ovesp_result->data[i] = NULL;
+        for (j = 0; tmp_ptr != NULL && strcmp(ovesp_result->command, tmp_ptr) != 0; tmp_ptr = strtok(NULL, "#"), j++) {
+            ovesp_result->data[i] = (char**)realloc(ovesp_result->data[i],sizeof(char*)*(j + 1));
+            if (ovesp_result->data[i] == NULL)
+                return NULL;
+            ovesp_result->data[i][j] = malloc(sizeof(char) * (strlen(tmp_ptr) + 1));
+            if (ovesp_result->data[i][j] == NULL)
+                return NULL;
+            strcpy(ovesp_result->data[i][j], tmp_ptr);
+        }
+        ovesp_result->columns_per_row = j;
+        ovesp_result->rows++;
+    }
+
+    return ovesp_result;
+
+}
+
+char *OVESP_TOKENIZER(OVESP *src_ovsp)
+{
+    char *res; /* Final result string */
+    char *tmp_ptr; /* Temp variable to avoid overwriting the begining of the string */
+    int i; /* Used as index */
+    int j; /* Used as index */
+
+    res = NULL; 
+    tmp_ptr = NULL;
+
+    for (i = 0; i < src_ovsp->rows; i++) { /* Loop through all rows */
+        for (j = 0; j <src_ovsp->columns_per_row; j++) { /* Loop through all columns */
+
+            if (res == NULL){ /* If we are at the beginning of the string, we simply allocate for the first token */
+                res = (char*)realloc(res, sizeof(char) * (strlen(src_ovsp->data[i][j]) + 2));
+                if (res == NULL)
+                    return NULL;
+
+                strcpy(res, src_ovsp->data[i][j]);
+                strcat(res, "#");
+                tmp_ptr = res;
+            }
+            else{ /* Else, we can now safely use strlen */
+                res = (char*)realloc(res, sizeof(char) * (strlen(src_ovsp->data[i][j]) + 2) * strlen(res));
+                if (res == NULL)
+                    return NULL;
+
+                tmp_ptr = res;
+                tmp_ptr = res + strlen(res); /* If we don't do that, we overwrite the beginning of the string ...*/
+                strcpy(tmp_ptr, src_ovsp->data[i][j]);
+
+                /* If we are not at the last row -1, we add the #. Else we don't as we don't want a trailing # to be added at the end of the request */
+                if (i != src_ovsp->rows -1)
+                    strcat(res, "#");
             }
         }
     }
-    destroy_sql_result(results); /* Dont forget to free the sql_result */
 
-    return 0;
-
+    return res;
 }
 
-int create_new_user(char *username, char *password)
-{
-    int error_check;
-
-    /* If error or user already exist, return 1*/
-    if ((error_check = username_already_exists(username)) < 0 ) {
-        return error_check;
-    }
-    else if (error_check == 1)
-        return 1;
-    else {
-        if ((error_check = sql_add_client(username, password)) < 0 ) {
-            /* Could not create the user*/
-            return -1;
-        }
-
-    }
-    return 0; /* User successfully created */
-}
-
-int client_check_creds(char *username, char *password)
-{
-    int username_exist;
-    int i;
-    int x;
-    Sql_result *results;
-    
-    if ((username_exist = username_already_exists(username)) == -1) {
-        /* Database error */
-        return -1;
-    }
-    else if (username_exist == 0) {
-        /* User doesn't exist in the database, we should create a new one */
-        return 1;
-    }
-    
-    /* User exist in the database, whe have to check the password */
-    results = sql_get_user_password(username);
-    if (results == NULL)
-        return -1;
-
-    else {
-        for(i = 0; i < results->rows; i++) {
-            for (x = 0; x < results->columns_per_row; x++) {
-                /* If the password matches the user return 0 */
-                if (strcmp(results->array_request[i][x], password) == 0) {
-                    destroy_sql_result(results); /* Dont forget to free the sql_result */
-                    return 0;
-                }
-            }
-        }
-    }
-    destroy_sql_result(results); /* Dont forget to free the sql_result */
-    return 2;
-    
-}
-int articles_already_exists(char *idArticle)
+OVESP *OVESP_SQL_TO_OVESP(Sql_result *sql_results, const char *command)
 {
     int i;
-    int x;
-    Sql_result *results;
+    int j;
+    OVESP *ovesp_results;
 
-    /* Get a list of all the users */
-    results = sql_get_all_articles();
-    if (results == NULL)
-        return -1;
+    ovesp_results = (OVESP*)malloc(sizeof(OVESP));
+    if (ovesp_results == NULL)
+        return NULL;
     
-    else {
-        /* Iterate all the rows (row numbers) + columns (usernames) and compare*/
-        for(i = 0; i < results->rows; i++) {
-            for (x = 0; x < results->columns_per_row; x++) {
-                /* If the username is found, return 1*/
-                if (strcmp(results->array_request[i][x], idArticle) == 0) {
-                    destroy_sql_result(results); /* Dont forget to free the sql_result */
-                    return 1;
-                }
-            }
+    ovesp_results->rows = sql_results->rows;
+    ovesp_results->columns_per_row = sql_results->columns_per_row;
+
+    ovesp_results->command = (char*)malloc(sizeof(char) * strlen(command) + 1);
+    if (ovesp_results->command == NULL)
+        return NULL;
+    
+    strcpy(ovesp_results->command, command);
+
+    ovesp_results->data = (char***)malloc(sizeof(char**)*ovesp_results->rows * ovesp_results->columns_per_row);
+    if (ovesp_results->data == NULL)
+        return NULL;
+    
+    for (i = 0; i < sql_results->rows; i++) {
+        for(j = 0; j < sql_results->columns_per_row; j++) {
+            ovesp_results->data[i][j] = (char*)malloc(sizeof(char)*(strlen(sql_results->array_request[i][j]) + 1));
+            if (ovesp_results->data[i][j] == NULL)
+                return NULL;
+            strcpy(ovesp_results->data[i][j], sql_results->array_request[i][j]);
         }
     }
-    /*Je me pose une question ? Etant donné qu'on check qu'une seule colonne du tab 
-    Est-ce nécessaire de faire deux boucles ? on pourrait simplement check chaque colonne et ce serait bon ainsi non ?*/
-    destroy_sql_result(results); /* Dont forget to free the sql_result */
 
-    return 0;
-}
-
-int consult(char *idArticle, Sql_result **result)
-{
-    int i;
-    Sql_result *results;
-    
-    results  = sql_get_article(idArticle);
-
-    if ((i = articles_already_exists(idArticle)) == -1) {
-        /* Database error */
-        return -1;
-    }
-    else if (i == 0) 
-        return 1;
-
-    results = sql_get_article(idArticle);
-    if (results == NULL) {
-        return 1;
-    }
-    *result = results;
-
-    return 0;
+    return ovesp_results;
 }
 int OVESP_RECEIVE(OVESP **reply_tokens, int src_socket)
 {
@@ -250,11 +226,10 @@ int OVESP_RECEIVE(OVESP **reply_tokens, int src_socket)
 
     msg = NULL;
 
-    error_check = Receive_msg(src_socket, &msg);
-    if (error_check < 0)
+    if ((error_check = Receive_msg(src_socket, &msg)) < 0)
         return error_check;
     
-    *reply_tokens = OVESP_RETRIEVE_TOKENS((char*)msg->data);
+    *reply_tokens = OVESP_create_results(msg->data);
     /* If an error occured, destroy the message and return */
     if (*reply_tokens == NULL) {
         destroyMessage(msg);
@@ -279,29 +254,19 @@ int OVESP_SEND(const char *request, int dst_socket)
     return error_check;
 
 }
-void destroy_OVESP(OVESP *ovesp)
-{
-    int i;
 
-    /* Iterate all the pointers and free them */
-    for (i = 0; i < ovesp->tokens; i++)
-        free(ovesp->tokensData[i]);
 
-    free(ovesp->tokensData);
-    free(ovesp);
-}
 int OVESP_LOGIN_OPERATION(OVESP *request_tokens, int client_socket)
 {   
     int error_check;
     char buffer[200];
 
-    for (error_check = 0; error_check < request_tokens->tokens; error_check++)
-        printf("%s\n", request_tokens->tokensData[error_check]);
 
     error_check = 0;
     /* If new user is asked we check in the database if it already exists */
-    if (strcmp(request_tokens->tokensData[3], "1") == 0) {
-        error_check = create_new_user(request_tokens->tokensData[1], request_tokens->tokensData[2]);
+    if (strcmp(request_tokens->data[0][2], "1") == 0) {
+        error_check = sql_create_new_user(request_tokens->data[0][0], request_tokens->data[0][1]);
+        printf("%d\n", error_check);
         if (error_check == 1) {
             strcpy(buffer, LOGIN_FAIL(LOGIN_ALREADY_EXISTS));
         }
@@ -312,8 +277,8 @@ int OVESP_LOGIN_OPERATION(OVESP *request_tokens, int client_socket)
             strcpy(buffer, LOGIN_OK);
         }
     }
-    else if (strcmp(request_tokens->tokensData[3], "0") == 0) {
-        error_check = client_check_creds(request_tokens->tokensData[1], request_tokens->tokensData[2]);
+    else if (strcmp(request_tokens->data[0][2], "0") == 0) {
+        error_check = sql_client_check_creds(request_tokens->data[0][0], request_tokens->data[0][1]);
         if (error_check == 0) {
             strcpy(buffer, LOGIN_OK);
         }
@@ -328,203 +293,61 @@ int OVESP_LOGIN_OPERATION(OVESP *request_tokens, int client_socket)
         }
     }
     else {
-        printf("%s\n", request_tokens->tokensData[3]);
+        printf("%s\n", request_tokens->data[0][2]);
         strcpy(buffer, LOGIN_FAIL(LOGIN_BAD_REQUEST));
     }
 
-    printf("REPONSE : %s", buffer);
     return OVESP_SEND(buffer, client_socket);
 
 }
 
-static int OVESP_CONSULT_OPERATION(OVESP *request_tokens, int client_socket)
-{
-    int error_check;
-    char buffer[200];
-    Sql_result *result;
-    OVESP *tokenized_result;
-
-    result = NULL;
-
-     for (error_check = 0; error_check < request_tokens->tokens; error_check++)
-        printf("%s\n", request_tokens->tokensData[error_check]);
-    
-    error_check = 0;
-
-    if ((error_check = consult(request_tokens->tokensData[1], &result)) ==-1) {
-        /* Database error */
-        strcpy(buffer, CONSULT_FAIL);
-        OVESP_SEND(CONSULT_FAIL, client_socket);
-        return 1;
-    }
-    else if (error_check == 1) {
-        /* Trouve */
-        if ((tokenized_result = OVESP_TOKENIZER(&result, "CONSULT")) == NULL)
-        {
-            OVESP_SEND(CONSULT_FAIL, client_socket);
-            return 1;
-        }
-        else
-        {
-            OVESP_SEND(*(tokenized_result->tokensData), client_socket);
-        }
-        
-    }
-    else if (error_check == 0) {
-        strcpy(buffer, CONSULT_FAIL);
-    }
-
-
-}
-OVESP* OVESP_RETRIEVE_TOKENS(char *request, const char *commande)
-{
-    int tokensCount;
-    char *tokens_ptr;
-    OVESP *tokens;
-    int i, j;   
-
-
-    tokens = (OVESP*)malloc(sizeof(OVESP));
-    if (tokens == NULL)
-        return NULL;
-
-    tokens->rows = 0;
-    tokens->columns_per_row = 0;
-
-
-    tokens_ptr = request;
-
-    /* Count how rows and columns are present in the request */
-    while ((tokens_ptr = strchr(tokens_ptr, '#'))!= NULL){
-        if (strcmp(tokens_ptr, commande) == 0) {
-            tokens->rows++;
-            tokens->columns_per_row = 0;
-        }
-        tokens->columns_per_row++;
-    }
-
-    tokens->data = (char***)malloc(sizeof(char**)*tokens->rows *tokens->columns_per_row);
-    if(tokens->data == NULL)
-        return NULL;    
-    
-    /* Initial string request will be modified !!!! */
-    tokens_ptr = strtok(request, "#");
-    tokensCount = 0;
-
-    for(i = 0;i < tokens->rows;i++)
-    {
-        for(j = 0;j < tokens->columns_per_row;j++)
-        {
-            tokens_ptr = strtok(request, "#");
-            if (strcmp(tokens_ptr, commande)!= 0)
-            {
-                tokens->data[i][j] = (char*)malloc(strlen(tokens_ptr) + 1);
-                if (tokens->data[i][j] == NULL)
-                    return NULL;
-                strcpy(tokens->data[i][j], tokens_ptr);
-            }
-        }
-    }
-    
-    return tokens;
-}
-
-
+/**
+ * @brief Main server function to handle requests
+ * 
+ * @param client_socket The client socket to receive requests from
+ * @return 0 : If the request has successfully been sent.
+ * @return OVESP_DISCONNECT : If the socket has been disconnected. 
+ * @return OVESP_INVALID_DATA : If a corrupt data has been passed.
+ * @return OVESP_BROKEN_SOCK : If the data could no be received. That doesn't mean that the socket is closed or the connection is broken !
+ */
 int OVESP_server(int client_socket)
 {
-    OVESP* tokens;
-    Message *msg;
+    OVESP* request;
     int error_check;
 
-    msg = NULL;
     error_check = 0;
 
-    error_check = Receive_msg(client_socket, &msg);
+    error_check = OVESP_RECEIVE(&request, client_socket);
     if (error_check < 0)
         return error_check;
 
-    tokens = OVESP_RETRIEVE_TOKENS((char*)msg->data);
-    if (tokens == NULL) {
-        destroyMessage(msg);
-        return -4; /* Server will catch it, maybe sent an error to the client to try again ?*/
-    }
-    if (strcmp(tokens->tokensData[0], LOGIN_COMMAND) == 0) {
-        error_check = OVESP_LOGIN_OPERATION(tokens, client_socket);
+
+    if (strcmp(request->command, LOGIN_COMMAND) == 0) {
+        error_check = OVESP_LOGIN_OPERATION(request, client_socket);
         if (error_check < 0) {
-            destroyMessage(msg);
-            destroy_OVESP(tokens);
+            destroy_OVESP(request);
             return error_check;
         }
     }
 
-    if (strcmp(tokens->tokensData[0], CONSULT_COMMAND) == 0) {
-        error_check = OVESP_CONSULT_OPERATION(tokens, client_socket);
-        if (error_check < 0) {
-            destroyMessage(msg);
-            destroy_OVESP(tokens);
-            return error_check;
-        }
-    }
-    destroyMessage(msg);
-    destroy_OVESP(tokens);
+    // if (strcmp(tokens->tokensData[0], CONSULT_COMMAND) == 0) {
+    //     error_check = OVESP_CONSULT_OPERATION(tokens, client_socket);
+    //     if (error_check < 0) {
+    //         destroyMessage(msg);
+    //         destroy_OVESP(tokens);
+    //         return error_check;
+    //     }
+    // }
+    destroy_OVESP(request);
 
     return error_check;
 }
-OVESP* OVESP_TOKENIZER(Sql_result **results, char *commande)
-{
-    OVESP *tokens;
-    int i;
-    int j;
-    int x;
 
-    
-    tokens = (OVESP*)malloc(sizeof(OVESP));
-    if (tokens == NULL)
-        return NULL;
-
-    tokens->tokens = ((*results)->columns_per_row + 1)*((*results)->rows);
-    tokens->tokensData = (char**)malloc(sizeof(char*)*tokens->tokens);
-    if (tokens->tokensData == NULL) {
-        free(tokens); /* Free previously allocated pointer before returning. */
-        return NULL;
-    }
-    
-
-    for(j = 0, x = 0;j<(*results)->rows;j++)
-    {
-        tokens->tokensData[x] = (char*)malloc(sizeof(char)*(strlen(commande) + 2));
-        if (tokens->tokensData[x] == NULL) {
-            free(tokens->tokensData);
-            return NULL;
-        }
-        strcpy(tokens->tokensData[x], commande);
-        strcat(tokens->tokensData[x], "#");
-        x++;
-        for(i=0; i<(*results)->columns_per_row + 1;i++)
-        {
-            tokens->tokensData[x] = (char*)malloc(sizeof(char)*(strlen((*results)->array_request[j][i]) + 2));
-            if (tokens->tokensData[x] == NULL){
-                free(tokens->tokensData);
-                return NULL;
-            }
-
-            strcpy(tokens->tokensData[x], (*results)->array_request[j][i]);
-            strcat(tokens->tokensData[x], "#");
-            x++;
-        }
-
-        strcpy(tokens->tokensData[x++], DELI); 
-
-    }
-
-    return tokens;
-
-}
 int OVESP_Login(const char *user, const char *password, const char new_user_flag, int server_socket)
 {
     int error_check;
     char buffer[200];
-    OVESP *ovesp;
+    OVESP *response;
     
     error_check = 0;
 
@@ -535,93 +358,251 @@ int OVESP_Login(const char *user, const char *password, const char new_user_flag
     if (error_check < 0)
         return error_check;
     
-    error_check = OVESP_RECEIVE(&ovesp, server_socket);
+    error_check = OVESP_RECEIVE(&response, server_socket);
     if (error_check < 0)
         return error_check;
     
 
 
-    if (strcmp(ovesp->tokensData[0], LOGIN_COMMAND) == 0) {
+    if (strcmp(response->command, LOGIN_COMMAND) == 0) {
         
-        if (strcmp(ovesp->tokensData[1], SUCCESS) == 0) {
-            destroy_OVESP(ovesp);
+        if (strcmp(response->data[0][0], SUCCESS) == 0) {
+            destroy_OVESP(response);
             /* The login attempt has succeeded */
             return 0;
         }
-        else if (strcmp(ovesp->tokensData[1], FAIL) == 0) {
+        else if (strcmp(response->data[0][0], FAIL) == 0) {
             /* The login attempt has failed. Let's find out why ??? */
-            if (strcmp(ovesp->tokensData[2], LOGIN_BAD_USER) == 0) {
-                destroy_OVESP(ovesp);
+            if (strcmp(response->data[0][1], LOGIN_BAD_USER) == 0) {
+                destroy_OVESP(response);
                 return 1;
             }
-            else if (strcmp(ovesp->tokensData[2], LOGIN_BAD_PASSWORD) == 0) {
-                destroy_OVESP(ovesp);
+            else if (strcmp(response->data[0][1], LOGIN_BAD_PASSWORD) == 0) {
+                destroy_OVESP(response);
                 return 2;
             }
-            else if (strcmp(ovesp->tokensData[2], LOGIN_DB_FAIL) == 0) {
-                destroy_OVESP(ovesp);
+            else if (strcmp(response->data[0][1], LOGIN_DB_FAIL) == 0) {
+                destroy_OVESP(response);
                 return 3;
             }
-            else if (strcmp(ovesp->tokensData[2], LOGIN_ALREADY_EXISTS) == 0) {
-                destroy_OVESP(ovesp);
+            else if (strcmp(response->data[0][1], LOGIN_ALREADY_EXISTS) == 0) {
+                destroy_OVESP(response);
                 return 4;
             }
             else {
-                destroy_OVESP(ovesp);
+                destroy_OVESP(response);
                 return -4; /* Bad reply from the server */
             }
         }  
         else {
-            destroy_OVESP(ovesp);
+            destroy_OVESP(response);
             return -4; /* Bad reply from the server */
         }
     }
     else {
-        destroy_OVESP(ovesp);
+        destroy_OVESP(response);
         return -4; /* Bad reply from the server */
     }
     
-    destroy_OVESP(ovesp);
+    destroy_OVESP(response);
     return 0;
 }
-int OVESP_Consult(int idArticle, int server_socket, OVESP *result)
+
+
+// static int OVESP_CONSULT_OPERATION(OVESP *request_tokens, int client_socket)
+// {
+//     int error_check;
+//     char buffer[200];
+//     Sql_result *result;
+//     OVESP *tokenized_result;
+
+//     result = NULL;
+
+//      for (error_check = 0; error_check < request_tokens->tokens; error_check++)
+//         printf("%s\n", request_tokens->tokensData[error_check]);
+    
+//     error_check = 0;
+
+//     if ((error_check = consult(request_tokens->tokensData[1], &result)) ==-1) {
+//         /* Database error */
+//         strcpy(buffer, CONSULT_FAIL);
+//         OVESP_SEND(CONSULT_FAIL, client_socket);
+//         return 1;
+//     }
+//     else if (error_check == 1) {
+//         /* Trouve */
+//         if ((tokenized_result = OVESP_TOKENIZER(&result, "CONSULT")) == NULL)
+//         {
+//             OVESP_SEND(CONSULT_FAIL, client_socket);
+//             return 1;
+//         }
+//         else
+//         {
+//             OVESP_SEND(*(tokenized_result->tokensData), client_socket);
+//         }
+        
+//     }
+//     else if (error_check == 0) {
+//         strcpy(buffer, CONSULT_FAIL);
+//     }
+
+
+// }
+// OVESP* OVESP_RETRIEVE_TOKENS(char *request, const char *commande)
+// {
+//     int tokensCount;
+//     char *tokens_ptr;
+//     OVESP *tokens;
+//     int i, j;   
+
+
+//     tokens = (OVESP*)malloc(sizeof(OVESP));
+//     if (tokens == NULL)
+//         return NULL;
+
+//     tokens->rows = 0;
+//     tokens->columns_per_row = 0;
+
+
+//     tokens_ptr = request;
+
+//     /* Count how rows and columns are present in the request */
+//     while ((tokens_ptr = strchr(tokens_ptr, '#'))!= NULL){
+//         if (strcmp(tokens_ptr, commande) == 0) {
+//             tokens->rows++;
+//             tokens->columns_per_row = 0;
+//         }
+//         tokens->columns_per_row++;
+//     }
+
+//     tokens->data = (char***)malloc(sizeof(char**)*tokens->rows *tokens->columns_per_row);
+//     if(tokens->data == NULL)
+//         return NULL;    
+    
+//     /* Initial string request will be modified !!!! */
+//     tokens_ptr = strtok(request, "#");
+//     tokensCount = 0;
+
+//     for(i = 0;i < tokens->rows;i++)
+//     {
+//         for(j = 0;j < tokens->columns_per_row;j++)
+//         {
+//             tokens_ptr = strtok(request, "#");
+//             if (strcmp(tokens_ptr, commande)!= 0)
+//             {
+//                 tokens->data[i][j] = (char*)malloc(strlen(tokens_ptr) + 1);
+//                 if (tokens->data[i][j] == NULL)
+//                     return NULL;
+//                 strcpy(tokens->data[i][j], tokens_ptr);
+//             }
+//         }
+//     }
+    
+//     return tokens;
+// }
+
+
+
+// OVESP* OVESP_TOKENIZER(Sql_result **results, char *commande)
+// {
+//     OVESP *tokens;
+//     int i;
+//     int j;
+//     int x;
+
+    
+//     tokens = (OVESP*)malloc(sizeof(OVESP));
+//     if (tokens == NULL)
+//         return NULL;
+
+//     tokens->tokens = ((*results)->columns_per_row + 1)*((*results)->rows);
+//     tokens->tokensData = (char**)malloc(sizeof(char*)*tokens->tokens);
+//     if (tokens->tokensData == NULL) {
+//         free(tokens); /* Free previously allocated pointer before returning. */
+//         return NULL;
+//     }
+    
+
+//     for(j = 0, x = 0;j<(*results)->rows;j++)
+//     {
+//         tokens->tokensData[x] = (char*)malloc(sizeof(char)*(strlen(commande) + 2));
+//         if (tokens->tokensData[x] == NULL) {
+//             free(tokens->tokensData);
+//             return NULL;
+//         }
+//         strcpy(tokens->tokensData[x], commande);
+//         strcat(tokens->tokensData[x], "#");
+//         x++;
+//         for(i=0; i<(*results)->columns_per_row + 1;i++)
+//         {
+//             tokens->tokensData[x] = (char*)malloc(sizeof(char)*(strlen((*results)->array_request[j][i]) + 2));
+//             if (tokens->tokensData[x] == NULL){
+//                 free(tokens->tokensData);
+//                 return NULL;
+//             }
+
+//             strcpy(tokens->tokensData[x], (*results)->array_request[j][i]);
+//             strcat(tokens->tokensData[x], "#");
+//             x++;
+//         }
+
+//         strcpy(tokens->tokensData[x++], DELI); 
+
+//     }
+
+//     return tokens;
+
+// }
+
+// int OVESP_Consult(int idArticle, int server_socket, OVESP *result)
+// {
+//     int error_check;
+//     char buffer[50];
+//     OVESP *ovesp;
+//     char *article;
+//     error_check = 0;
+
+//     sprintf(buffer, "%s#%d#", CONSULT_COMMAND, idArticle);
+
+
+//     error_check = OVESP_SEND(buffer, server_socket);
+//     /* if an error occured we return the return statement from the OVESP_SEND function */
+//     if (error_check < 0)
+//         return error_check;
+
+
+//     error_check = OVESP_RECEIVE(&ovesp, server_socket);
+//     if (error_check < 0)
+//         return error_check;
+
+//     if(strcmp(ovesp->tokensData[0], CONSULT_COMMAND) == 0)
+//     {
+//         ovesp->tokensData[1] = ovesp->tokensData[1] + 0x30;
+//         if(strcmp(ovesp->tokensData[1], "-1" ) == 0)
+//         {
+//             destroy_OVESP(ovesp);
+//             return 1;
+//         }
+//         else
+//         {
+//             *article = (char*)malloc((strlen(ovesp->tokensData) + 1)*sizeof(char));
+//             if (*article == NULL)
+//                 return -3;
+//             strcpy(*articles, ovesp->tokensData);
+//             destroy_OVESP(ovesp);
+//             return 0;
+//         }
+
+//     }
+// }
+
+void destroy_OVESP(OVESP *ovesp)
 {
-    int error_check;
-    char buffer[50];
-    OVESP *ovesp;
-    char *article;
-    error_check = 0;
+    int i;
+    int j;
 
-    sprintf(buffer, "%s#%d#", CONSULT_COMMAND, idArticle);
-
-
-    error_check = OVESP_SEND(buffer, server_socket);
-    /* if an error occured we return the return statement from the OVESP_SEND function */
-    if (error_check < 0)
-        return error_check;
-
-
-    error_check = OVESP_RECEIVE(&ovesp, server_socket);
-    if (error_check < 0)
-        return error_check;
-
-    if(strcmp(ovesp->tokensData[0], CONSULT_COMMAND) == 0)
-    {
-        ovesp->tokensData[1] = ovesp->tokensData[1] + 0x30;
-        if(strcmp(ovesp->tokensData[1], "-1" ) == 0)
-        {
-            destroy_OVESP(ovesp);
-            return 1;
+    for (i = 0; i < ovesp->rows; i++)
+        for (j = 0; j < ovesp->columns_per_row; j++) {
+            // TODO : freeeeeeeeee the memory 
         }
-        else
-        {
-            *article = (char*)malloc((strlen(ovesp->tokensData) + 1)*sizeof(char));
-            if (*article == NULL)
-                return -3;
-            strcpy(*articles, ovesp->tokensData);
-            destroy_OVESP(ovesp);
-            return 0;
-        }
-
-    }
 }
