@@ -543,7 +543,27 @@ int sql_cancel(char *idArticle, char *quantity)
     return 0;
 
 }
+int sql_confirmer(Sql_result **result)
+{
+    int error_check;
+    char request_str[200];
 
+
+    sprintf(request_str, "");
+
+    pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
+    if (mysql_query(connexion, request_str) != 0) {
+        pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
+        return -1;
+    }
+    
+    /* Release the mutex */
+    pthread_mutex_unlock(&mutexDB);
+
+
+    return 0;
+
+}
 void sql_destroy_result(Sql_result *request)
 {
     int i;

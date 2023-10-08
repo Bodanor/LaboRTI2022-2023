@@ -1,4 +1,4 @@
-SUBDIRS := ClientQt Server
+SUBDIRS := ClientQt Server BD_Maraicher
 
 all: $(SUBDIRS)
 
