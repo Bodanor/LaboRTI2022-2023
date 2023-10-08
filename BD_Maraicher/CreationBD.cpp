@@ -53,7 +53,7 @@ int main(int argc,char *argv[])
   printf("Creation de la table clients...\n");
   mysql_query(connexion,"create table clients (id INT(4) auto_increment primary key, login varchar(20), password varchar(20));");
   mysql_query(connexion,"create table factures (id INT(4) auto_increment primary key, idClient INT(4), date DATETIME, montant FLOAT, paye BIT);");
-  mysql_query(connexion,"create table ventes (idFacture INT(4) auto_increment primary key, idArticle INT(4), qunantie INT(4));");
+  mysql_query(connexion,"create table ventes (idFacture INT(4) auto_increment primary key, idArticle INT(4), quantite INT(4));");
   // Ajout de tuples dans la table UNIX_FINAL
   printf("Ajout de 21 articles la table articles...\n");
   char requete[256];

@@ -483,6 +483,17 @@ void WindowClient::on_pushButtonViderPanier_clicked()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void WindowClient::on_pushButtonPayer_clicked()
 {
+    int error_check;
+
+    error_check = OVESP_Confirmer(getSocket());
+
+    if(error_check = -1)
+    {
+        dialogueErreur("Erreur", "Erreur de payement !");
+    }
+    else {
+        w->videTablePanier();
+    }
 }
 
 int WindowClient::getSocket()

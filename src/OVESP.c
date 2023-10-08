@@ -41,6 +41,7 @@ char *OVESP_TOKENIZER(OVESP *src_ovsp);
  */
 OVESP *OVESP_SQL_TO_OVESP(Sql_result *sql_results, const char *command);
 
+Sql_result* OVESP_OVESP_TO_SQL(OVESP*ovesp_res);
 /**
  * @brief Send an OVESP request in form of a string to a socket.
  * 
@@ -68,7 +69,7 @@ static int OVESP_ACHAT_OPERATION(OVESP *request_tokens, int client_socket, OVESP
 static int OVESP_CADDIE_OPERATION(OVESP * caddie, int client_socket);
 static int OVESP_UPDATE_CADDIE(OVESP *res, OVESP **caddie, const char *command);
 static int OVESP_CANCEL_OPERATION(OVESP *request_tokens, int client_socket, OVESP **caddie);
-static int OVESP_CONFIRMER_OPERATION(OVESP *request_tokens, int client_socket, OVESP **caddie);
+static int OVESP_CONFIRMER_OPERATION(int client_socket, OVESP **caddie);
 /**
  * @brief Receive a OVESP request and create an OVESP structure.
  * 
@@ -140,8 +141,6 @@ OVESP*OVESP_create_results(uint8_t *data)
 
 char *OVESP_TOKENIZER(OVESP *src_ovsp)
 {
-
-    
     char *res; /* Final result string */
     char *tmp_ptr; /* Temp variable to avoid overwriting the begining of the string */
     int i; /* Used as index */
@@ -216,6 +215,38 @@ OVESP *OVESP_SQL_TO_OVESP(Sql_result *sql_results, const char *command)
     }
 
     return ovesp_results;
+}
+
+Sql_result* OVESP_OVESP_TO_SQL(OVESP*ovesp_res)
+{
+    int i;
+    int j;
+    Sql_result *sql_res;
+
+    sql_res = (Sql_result*)malloc(sizeof(Sql_result));
+    if (sql_res == NULL)
+        return NULL;
+    
+    sql_res->rows = ovesp_res->rows;
+    sql_res->columns_per_row = ovesp_res->columns_per_row;
+
+    sql_res->array_request = (char***)malloc(sizeof(char**)*sql_res->rows);
+    if (sql_res->array_request == NULL)
+        return NULL;
+    
+    for (i = 0; i < ovesp_res->rows; i++) {
+        sql_res->array_request[i] = (char**)malloc(sizeof(char*)*ovesp_res->columns_per_row);
+        if (sql_res->array_request[i] == NULL)
+            return NULL;
+        for(j = 0; j < ovesp_res->columns_per_row; j++) {
+            sql_res->array_request[i][j] = (char*)malloc(sizeof(char)*(strlen(ovesp_res->data[i][j]) + 1));
+            if (sql_res->array_request[i][j] == NULL)
+                return NULL;
+            strcpy(sql_res->array_request[i][j], ovesp_res->data[i][j]);
+        }
+    }
+    return sql_res;
+
 }
 int OVESP_RECEIVE(OVESP **reply_tokens, int src_socket)
 {
@@ -500,9 +531,36 @@ int OVESP_CANCEL_OPERATION(OVESP *request_tokens, int client_socket, OVESP **cad
     }
     return error_check;
 }
-int OVESP_CONFIRMER_OPERATION(OVESP *request_tokens, int client_socket, OVESP **caddie)
+int OVESP_CONFIRMER_OPERATION(int client_socket, OVESP **caddie)
 {
+    int error_check;
+    char buffer_error[200];
+    char *request_res;
+    Sql_result *sql_res;
 
+    
+    request_res = NULL;
+    error_check = 0;
+
+    /*Fonction pour passer de OVESP à SQl*/
+    sql_res = OVESP_OVESP_TO_SQL(*caddie);
+
+    if ((error_check = sql_confirmer(&sql_res)) == -1 ) {
+         /* Database error */
+        sprintf(buffer_error, "%s#%s", CONFIRMER_COMMAND, OVESP_DB_FAIL);
+        error_check = OVESP_SEND(buffer_error, client_socket);
+    }
+    else
+    {
+        /*Mettre le caddie à 0*/
+        sprintf(buffer_error, "%s", CONFIRMER_SUCCESSFULL);
+        error_check = OVESP_SEND(request_res, client_socket);
+        free(request_res);
+
+        /* Destroy bucket*/
+        destroy_OVESP(*caddie);
+    }
+    return error_check;
 }
 
 /**
@@ -554,7 +612,6 @@ int OVESP_server(int client_socket, OVESP **caddie)
             destroy_OVESP(request);
             return error_check;
         } 
-    
     }
     else if (strcmp(request->command, CANCEL_COMMAND) == 0) {
         if (*caddie == NULL)
@@ -572,12 +629,12 @@ int OVESP_server(int client_socket, OVESP **caddie)
     }
     else if (strcmp(request->command, CONFIRMER_COMMAND) == 0) {
         
-        error_check = OVESP_CONFIRMER_OPERATION(request, client_socket, caddie);
+        printf("COUCOU\n");
+        error_check = OVESP_CONFIRMER_OPERATION(client_socket, caddie);
         if (error_check < 0) {
             destroy_OVESP(request);
             return error_check;
-        } 
-    
+        }
     }
     else {
         

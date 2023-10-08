@@ -547,16 +547,18 @@ int sql_confirmer(Sql_result **result)
 {
     int error_check;
     char request_str[200];
+    int i;
 
-
-    sprintf(request_str, "");
-
-    pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
-    if (mysql_query(connexion, request_str) != 0) {
-        pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
-        return -1;
+    for(i=0;i<(*result)->rows;i++)
+    {
+        sprintf(request_str, "insert into ventes (idFacture, idArticle, quantite) values(%d,%s,%s)",0, (*result)->array_request[i][0], (*result)->array_request[i][3]);
+        pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
+        if (mysql_query(connexion, request_str) != 0) {
+            pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
+            return -1;
+        }
     }
-    
+      
     /* Release the mutex */
     pthread_mutex_unlock(&mutexDB);
 
