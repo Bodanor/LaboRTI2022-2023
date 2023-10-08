@@ -95,5 +95,6 @@ void sql_destroy_result(Sql_result *request);
  * @return SQL_DB_ERROR : A database error occured.
  */
 int sql_achat(char *idArticle, char *quantite, Sql_result **result);
+int sql_cancel(char *idArticle, char *quantity);
 
 #endif 

@@ -517,6 +517,32 @@ int sql_achat(char *idArticle, char *quantite, Sql_result **result)
 
     return 0;
 }
+int sql_cancel(char *idArticle, char *quantity)
+{
+    int error_check;
+    char request_str[200];
+
+   
+
+    if ((error_check = sql_articles_already_exists(idArticle)) == 1 || error_check == SQL_DB_ERROR) {
+        /* Database error */
+        return error_check;
+    }
+    sprintf(request_str, "update articles set stock =stock+%d where id=%d", atoi(quantity), atoi(idArticle));
+
+    pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
+    if (mysql_query(connexion, request_str) != 0) {
+        pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
+        return -1;
+    }
+    
+    /* Release the mutex */
+    pthread_mutex_unlock(&mutexDB);
+
+
+    return 0;
+
+}
 
 void sql_destroy_result(Sql_result *request)
 {

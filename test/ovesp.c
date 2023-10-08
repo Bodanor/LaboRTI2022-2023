@@ -1,5 +1,22 @@
 #include "ovesp.h"
 
+void destroy_OVESP(OVESP *ovesp)
+{
+    int i;
+    int j;
+
+    free(ovesp->command);
+    for (i = 0; i < ovesp->rows; i++) {
+        for (j = 0; j < ovesp->columns_per_row; j++) {
+            free(ovesp->data[i][j]);
+        }
+        free(ovesp->data[i]);
+        
+    }
+    free(ovesp->data);
+    free(ovesp);
+}
+
 OVESP*OVESP_create_results(uint8_t *data)
 {
     OVESP *ovesp_result;
@@ -90,4 +107,78 @@ char *OVESP_TOKENIZER(OVESP *src_ovsp)
 
 
     return res;
+}
+
+int OVESP_UPDATE_CADDIE(OVESP *res, OVESP **caddie, const char *command)
+{
+    int i;
+    int j;
+    int caddie_size;
+    
+    caddie_size = 0;
+    
+
+    if(strcmp(command, ACHAT_COMMAND) == 0)
+    {
+        for(i = 0; i < (*caddie)->rows; i++)
+        {
+            for(j = 0;j < (*caddie)->columns_per_row; j++)
+            {
+                caddie_size += strlen((*caddie)->data[i][j]) +1;
+            }
+        }
+
+        (*caddie)->data = (char***)realloc((*caddie)->data, sizeof(char**) *((*caddie)->rows + 1) * (res->columns_per_row * caddie_size));
+        if ((*caddie)->data == NULL)
+            return -1;
+        
+        (*caddie)->data[(*caddie)->rows] = (char**)malloc(sizeof(char*) *(res->columns_per_row));
+        if ((*caddie)->data[(*caddie)->rows] == NULL)
+            return -1;
+        
+        
+        for(i = 0;i<(*caddie)->columns_per_row;i++)
+        {
+            (*caddie)->data[(*caddie)->rows][i] = (char*)malloc(sizeof(char) * (strlen(res->data[0][i]) + 1));
+            if ((*caddie)->data[(*caddie)->rows][i] == NULL)
+                return -1;
+            strcpy((*caddie)->data[(*caddie)->rows][i], res->data[0][i]);
+            
+        }
+        (*caddie)->rows++;
+    }
+    else if(strcmp(command, CANCEL_COMMAND) == 0)
+    {
+        for(i = 0;i<(*caddie)->rows;i++)
+        {
+            if (strcmp((*caddie)->data[i][0], res->data[0][0]) == 0) {
+                for (j = 0; j < (*caddie)->columns_per_row; j++)
+                {
+                    free((*caddie)->data[i][j]);
+                    
+                }
+                free((*caddie)->data[i]);
+                /* Decale tout ce qui se trouve apres*/
+                for (j = i ; j < (*caddie)->rows; j++) {
+                    if (j + 1 != (*caddie)->rows) {
+                        (*caddie)->data[j] =  (*caddie)->data[j+1];
+                        (*caddie)->data[j + 1] = NULL;
+                    }
+
+                }
+                (*caddie)->rows--;
+                if ((*caddie)->rows == 0) {
+                    destroy_OVESP(*caddie);
+                    *caddie = NULL;
+                }
+                return 0;
+            }
+        }
+
+        return 1; /* Not found */
+
+
+    }
+        
+        return 0;
 }

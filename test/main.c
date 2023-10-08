@@ -7,14 +7,19 @@ int main()
 {
     OVESP *res;
     OVESP *caddie;
+    int ret;
 
     char buffer[200] = {0};
-    char *string;
 
-    string = NULL;
-    strcpy(buffer, "ACHAT#1#carottes#4#png.png#ACHAT#2#martin#6#martin.png");
+    strcpy(buffer, "ACHAT#2#martin#6#martin.png");
     res = OVESP_create_results((uint8_t*)buffer);
-    string = OVESP_TOKENIZER(res);
-    printf("%s\n", string);
+    strcpy(buffer, "ACHAT#2#martin#6#martin.png");
+    caddie = OVESP_create_results((uint8_t*)buffer);
+
+
+    ret = OVESP_UPDATE_CADDIE(res, &caddie, CANCEL_COMMAND);
+    destroy_OVESP(res);    
+    //destroy_OVESP(caddie);
+    //printf("%d\n", ret);
 
 }

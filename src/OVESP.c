@@ -67,6 +67,7 @@ static int OVESP_LOGIN_OPERATION(OVESP *request_tokens, int client_socket);
 static int OVESP_ACHAT_OPERATION(OVESP *request_tokens, int client_socket, OVESP **caddie);
 static int OVESP_CADDIE_OPERATION(OVESP * caddie, int client_socket);
 static int OVESP_UPDATE_CADDIE(OVESP *res, OVESP **caddie, const char *command);
+static int OVESP_CANCEL_OPERATION(OVESP *request_tokens, int client_socket, OVESP **caddie);
 /**
  * @brief Receive a OVESP request and create an OVESP structure.
  * 
@@ -427,50 +428,6 @@ static int OVESP_ACHAT_OPERATION(OVESP *request_tokens, int client_socket, OVESP
     return error_check;
 }
 
-int OVESP_UPDATE_CADDIE(OVESP *res, OVESP **caddie, const char *command)
-{
-    int i;
-    int j;
-    int caddie_size;
-    
-    caddie_size = 0;
-    
-    for(i = 0; i < (*caddie)->rows; i++)
-    {
-        for(j = 0;j < (*caddie)->columns_per_row; j++)
-        {
-            caddie_size += strlen((*caddie)->data[i][j]) +1;
-        }
-    }
-
-    if(strcmp(command, ACHAT_COMMAND) == 0)
-    {
-        (*caddie)->data = (char***)realloc((*caddie)->data, sizeof(char**) *((*caddie)->rows + 1) * (res->columns_per_row * caddie_size));
-        if ((*caddie)->data == NULL)
-            return -1;
-        
-        (*caddie)->data[(*caddie)->rows] = (char**)malloc(sizeof(char*) *(res->columns_per_row));
-        if ((*caddie)->data[(*caddie)->rows] == NULL)
-            return -1;
-        
-        
-        for(i = 0;i<(*caddie)->columns_per_row;i++)
-        {
-            (*caddie)->data[(*caddie)->rows][i] = (char*)malloc(sizeof(char) * (strlen(res->data[0][i]) + 1));
-            if ((*caddie)->data[(*caddie)->rows][i] == NULL)
-                return -1;
-            strcpy((*caddie)->data[(*caddie)->rows][i], res->data[0][i]);
-            
-        }
-        (*caddie)->rows++;
-    }
-    else if(strcmp(command, CANCEL_COMMAND) == 0)
-    {
-        
-    }
-        
-        return 0;
-}
 
 int OVESP_CADDIE_OPERATION(OVESP * caddie, int client_socket)
 {
@@ -489,6 +446,61 @@ int OVESP_CADDIE_OPERATION(OVESP * caddie, int client_socket)
         error_check = OVESP_SEND(request_res, client_socket);
         free(request_res);
     }
+    return error_check;
+}
+int OVESP_CANCEL_OPERATION(OVESP *request_tokens, int client_socket, OVESP **caddie)
+{
+    int error_check;
+    char buffer_error[200];
+    char *request_res;
+    Sql_result *sql_res;
+    OVESP *res;
+    request_res = NULL;
+
+    if ((error_check = sql_cancel(request_tokens->data[0][0],request_tokens->data[0][1])) == -1 ) {
+         /* Database error */
+        sprintf(buffer_error, "%s#%s", CANCEL_COMMAND, OVESP_DB_FAIL);
+        error_check = OVESP_SEND(buffer_error, client_socket);
+    }
+    else
+    {
+        if ((request_res = OVESP_TOKENIZER(caddie)) == NULL)
+        {
+            sprintf(buffer_error, "%s#%s", CANCEL_COMMAND, CANCEL_FAIL);
+            error_check = OVESP_SEND(buffer_error, client_socket);
+            return -1;
+        }
+        else
+        {
+            //printf("REPONSE : %s", request_res);
+            /*Si le caddie n'existe pas alors on ne peut pas cancel car pas d'articles */
+            if (*caddie == NULL)
+            {
+                sprintf(buffer_error, "%s#%s", CANCEL_COMMAND, CANCEL_FAIL);
+                error_check = OVESP_SEND(buffer_error, client_socket);   
+            }
+            else
+            {
+                error_check = OVESP_UPDATE_CADDIE(res, caddie, CANCEL_COMMAND);
+                if (error_check == -1) {
+                    sprintf(buffer_error, "%s#%s", CANCEL_COMMAND, CANCEL_FAIL);
+                    error_check = OVESP_SEND(buffer_error, client_socket);
+                }
+            }
+            if (error_check == -1)
+            {
+                sprintf(buffer_error, "%s#%s", CANCEL_COMMAND, CANCEL_FAIL);
+                error_check = OVESP_SEND(buffer_error, client_socket);
+            }
+            error_check = OVESP_SEND(request_res, client_socket);
+            destroy_OVESP(res) ;
+            sql_destroy_result(sql_res);
+            free(request_res);
+        }
+
+    }
+    
+    
     return error_check;
 }
 
@@ -543,6 +555,20 @@ int OVESP_server(int client_socket, OVESP **caddie)
         else
         {
             error_check = OVESP_CADDIE_OPERATION(*caddie, client_socket);
+            if (error_check < 0) {
+                destroy_OVESP(request);
+                return error_check;
+            }
+        }
+    }
+    else if (strcmp(request->command, CANCEL_COMMAND) == 0) {
+        if (*caddie == NULL)
+        {
+            /* Envoyer au client une erreur */
+        }
+        else
+        {
+            error_check = OVESP_CANCEL_OPERATION(*caddie, client_socket, caddie);
             if (error_check < 0) {
                 destroy_OVESP(request);
                 return error_check;
@@ -775,14 +801,127 @@ int OVESP_Caddie(int server_socket, OVESP **result)
     
     return 0;
 }
+int OVESP_Cancel(char *idArticle, int server_socket)
+{
+    int error_check;
+    char buffer[50];
+    OVESP *ovesp;
+    char *article;
+    error_check = 0;
+
+    sprintf(buffer, "%s#%s#",CANCEL_COMMAND, idArticle);
+
+    error_check = OVESP_SEND(buffer, server_socket);
+    /* if an error occured we return the return statement from the OVESP_SEND function */
+    if (error_check < 0)
+        return error_check;
+
+
+    error_check = OVESP_RECEIVE(&ovesp, server_socket);
+    if (error_check < 0)
+        return error_check;
+
+    if(strcmp(ovesp->command, CANCEL_COMMAND) == 0)
+    {
+        if(strcmp(ovesp->data[0][0], "-1" ) == 0)
+        {
+            destroy_OVESP(ovesp);
+            return 1;
+        }   
+    }
+    else 
+        return -1;
+    
+    return 0;   
+}
 
 void destroy_OVESP(OVESP *ovesp)
 {
     int i;
     int j;
 
-    for (i = 0; i < ovesp->rows; i++)
+    free(ovesp->command);
+    for (i = 0; i < ovesp->rows; i++) {
         for (j = 0; j < ovesp->columns_per_row; j++) {
-            // TODO : freeeeeeeeee the memory 
+            free(ovesp->data[i][j]);
         }
+        free(ovesp->data[i]);
+        
+    }
+    free(ovesp->data);
+    free(ovesp);
+}
+
+int OVESP_UPDATE_CADDIE(OVESP *res, OVESP **caddie, const char *command)
+{
+    int i;
+    int j;
+    int caddie_size;
+    
+    caddie_size = 0;
+    
+
+    if(strcmp(command, ACHAT_COMMAND) == 0)
+    {
+        for(i = 0; i < (*caddie)->rows; i++)
+        {
+            for(j = 0;j < (*caddie)->columns_per_row; j++)
+            {
+                caddie_size += strlen((*caddie)->data[i][j]) +1;
+            }
+        }
+
+        (*caddie)->data = (char***)realloc((*caddie)->data, sizeof(char**) *((*caddie)->rows + 1) * (res->columns_per_row * caddie_size));
+        if ((*caddie)->data == NULL)
+            return -1;
+        
+        (*caddie)->data[(*caddie)->rows] = (char**)malloc(sizeof(char*) *(res->columns_per_row));
+        if ((*caddie)->data[(*caddie)->rows] == NULL)
+            return -1;
+        
+        
+        for(i = 0;i<(*caddie)->columns_per_row;i++)
+        {
+            (*caddie)->data[(*caddie)->rows][i] = (char*)malloc(sizeof(char) * (strlen(res->data[0][i]) + 1));
+            if ((*caddie)->data[(*caddie)->rows][i] == NULL)
+                return -1;
+            strcpy((*caddie)->data[(*caddie)->rows][i], res->data[0][i]);
+            
+        }
+        (*caddie)->rows++;
+    }
+    else if(strcmp(command, CANCEL_COMMAND) == 0)
+    {
+        for(i = 0;i<(*caddie)->rows;i++)
+        {
+            if (strcmp((*caddie)->data[i][0], res->data[0][0]) == 0) {
+                for (j = 0; j < (*caddie)->columns_per_row; j++)
+                {
+                    free((*caddie)->data[i][j]);
+                    
+                }
+                free((*caddie)->data[i]);
+                /* Decale tout ce qui se trouve apres*/
+                for (j = i ; j < (*caddie)->rows; j++) {
+                    if (j + 1 != (*caddie)->rows) {
+                        (*caddie)->data[j] =  (*caddie)->data[j+1];
+                        (*caddie)->data[j + 1] = NULL;
+                    }
+
+                }
+                (*caddie)->rows--;
+                if ((*caddie)->rows == 0) {
+                    destroy_OVESP(*caddie);
+                    *caddie = NULL;
+                }
+                return 0;
+            }
+        }
+
+        return 1; /* Not found */
+
+
+    }
+        
+        return 0;
 }

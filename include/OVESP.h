@@ -42,6 +42,8 @@
 
 #define CONSULT_FAIL "CONSULT#-1"
 
+#define CANCEL_FAIL "CANCEL#-1"
+
 #define ACHAT_FAIL "-1"
 #define ACHAT_STOCK_INSUFFISANT "0"
 
@@ -111,8 +113,7 @@ int OVESP_Consult(int idArticle, int server_socket, OVESP **result);
  */
 int OVESP_Achat(int idArticle, int quantite, int server_socket, OVESP **result);
 int OVESP_Caddie(int server_socket, OVESP **result);
-
-// int OVESP_Cancel(int idArticle, int server_socket);
+int OVESP_Cancel(char* idArticle, int server_socket);
 // int OVESP_Cancel_All(int server_socket);
 // int OVESP_Confirmer(int server_socket);
 // int OVESP_Logout(int server_socket);

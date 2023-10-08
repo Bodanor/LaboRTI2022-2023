@@ -409,7 +409,6 @@ void WindowClient::on_pushButtonAcheter_clicked()
         dialogueErreur("Erreur", "Une erreur interne est survenue !");
     }
     else {
-        ui->lineEditStock->text();
         setArticle(res->data[0][1],atof(res->data[0][2]),atoi(ui->lineEditStock->text().toLocal8Bit().data()) - atoi(res->data[0][3]),res->data[0][4]);
     }
 
@@ -433,6 +432,40 @@ void WindowClient::on_pushButtonAcheter_clicked()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void WindowClient::on_pushButtonSupprimer_clicked()
 {
+    int error_check;
+    int i;
+
+    OVESP * res;
+
+    error_check = OVESP_Caddie(getSocket(), &res);
+    if (error_check == -1 || error_check == 1) {
+        dialogueErreur("Erreur", "FATAL ERROR !");
+    }
+
+
+    error_check = OVESP_Cancel(res->data[getIndiceArticleSelectionne()][0], getSocket()); 
+    /*Il faudrait d'aures erreurs je suppose */ 
+    if (error_check == -2) {
+        dialogueErreur("Erreur", "Une erreur interne est survenue !");
+    }
+    else {
+        
+        setArticle(res->data[0][1],atof(res->data[0][2]),atoi(ui->lineEditStock->text().toLocal8Bit().data()) + atoi(res->data[0][3]),res->data[0][4]);
+    }
+
+    w->videTablePanier();
+
+
+    error_check = OVESP_Caddie(getSocket(), &res);
+    if (error_check == -1 || error_check == 1) {
+        dialogueErreur("Erreur", "FATAL ERROR !");
+    }
+
+    printf("Nombre d'article dans panier : %ld\n", res->rows);
+    for(i = 0; i < res->rows; i++) {
+        
+        ajouteArticleTablePanier(res->data[i][1], atof(res->data[i][2]), atoi(res->data[i][3]));
+    }
     
 }
 

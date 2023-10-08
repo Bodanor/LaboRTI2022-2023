@@ -8,6 +8,11 @@
 #include <string.h>
 #include <sys/types.h>
 
+#define CONSULT_COMMAND "CONSULT"
+#define ACHAT_COMMAND "ACHAT"
+#define CADDIE_COMMAND "CADDIE"
+#define CANCEL_COMMAND "CANCEL"
+
 typedef struct ovesp_t {
     ssize_t rows;
     ssize_t columns_per_row;
@@ -26,5 +31,6 @@ OVESP*OVESP_create_results(uint8_t *data);
  * @return NULL : Malloc error.
  */
 char *OVESP_TOKENIZER(OVESP *src_ovsp);
-
+int OVESP_UPDATE_CADDIE(OVESP *res, OVESP **caddie, const char *command);
+void destroy_OVESP(OVESP *ovesp);
 #endif
