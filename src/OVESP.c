@@ -68,6 +68,7 @@ static int OVESP_ACHAT_OPERATION(OVESP *request_tokens, int client_socket, OVESP
 static int OVESP_CADDIE_OPERATION(OVESP * caddie, int client_socket);
 static int OVESP_UPDATE_CADDIE(OVESP *res, OVESP **caddie, const char *command);
 static int OVESP_CANCEL_OPERATION(OVESP *request_tokens, int client_socket, OVESP **caddie);
+static int OVESP_CONFIRMER_OPERATION(OVESP *request_tokens, int client_socket, OVESP **caddie);
 /**
  * @brief Receive a OVESP request and create an OVESP structure.
  * 
@@ -405,6 +406,11 @@ static int OVESP_ACHAT_OPERATION(OVESP *request_tokens, int client_socket, OVESP
                         sprintf(buffer_error, "%s#%s", ACHAT_COMMAND, ACHAT_FAIL);
                         error_check = OVESP_SEND(buffer_error, client_socket);
                     }
+                    
+                    error_check = OVESP_SEND(request_res, client_socket);
+                    destroy_OVESP(res) ;
+                    sql_destroy_result(sql_res);
+                    free(request_res);
                 }
                 else{
                     error_check = OVESP_UPDATE_CADDIE(res, caddie, ACHAT_COMMAND);
@@ -412,19 +418,15 @@ static int OVESP_ACHAT_OPERATION(OVESP *request_tokens, int client_socket, OVESP
                         sprintf(buffer_error, "%s#%s", ACHAT_COMMAND, ACHAT_FAIL);
                         error_check = OVESP_SEND(buffer_error, client_socket);
                     }
+                    error_check = OVESP_SEND(request_res, client_socket);
+                    destroy_OVESP(res) ;
+                    sql_destroy_result(sql_res);
+                    free(request_res);
+
                 }
-                if (error_check == -1) {
-                    sprintf(buffer_error, "%s#%s", ACHAT_COMMAND, ACHAT_FAIL);
-                    error_check = OVESP_SEND(buffer_error, client_socket);
-                }
-                error_check = OVESP_SEND(request_res, client_socket);
-                destroy_OVESP(res) ;
-                sql_destroy_result(sql_res);
-                free(request_res);
             }
         }   
     }
-
     return error_check;
 }
 
@@ -437,12 +439,16 @@ int OVESP_CADDIE_OPERATION(OVESP * caddie, int client_socket)
 
     request_res = NULL;
     
-    if ((request_res = OVESP_TOKENIZER(caddie)) == NULL) {
+    if (caddie == NULL) {
+        sprintf(buffer_error, "%s#%s", CADDIE_COMMAND, CADDIE_EMPTY);
+        error_check = OVESP_SEND(buffer_error, client_socket);
+    }
+    else if ((request_res = OVESP_TOKENIZER(caddie)) == NULL) {
         sprintf(buffer_error, "%s#%s", CADDIE_COMMAND, CADDIE_FAIL);
         error_check = OVESP_SEND(buffer_error, client_socket);
     }
     else {
-        printf("REPONSE : %s", request_res);
+        
         error_check = OVESP_SEND(request_res, client_socket);
         free(request_res);
     }
@@ -453,9 +459,10 @@ int OVESP_CANCEL_OPERATION(OVESP *request_tokens, int client_socket, OVESP **cad
     int error_check;
     char buffer_error[200];
     char *request_res;
-    Sql_result *sql_res;
-    OVESP *res;
+
+    
     request_res = NULL;
+    error_check = 0;
 
     if ((error_check = sql_cancel(request_tokens->data[0][0],request_tokens->data[0][1])) == -1 ) {
          /* Database error */
@@ -464,7 +471,7 @@ int OVESP_CANCEL_OPERATION(OVESP *request_tokens, int client_socket, OVESP **cad
     }
     else
     {
-        if ((request_res = OVESP_TOKENIZER(caddie)) == NULL)
+        if ((request_res = OVESP_TOKENIZER(*caddie)) == NULL)
         {
             sprintf(buffer_error, "%s#%s", CANCEL_COMMAND, CANCEL_FAIL);
             error_check = OVESP_SEND(buffer_error, client_socket);
@@ -481,27 +488,21 @@ int OVESP_CANCEL_OPERATION(OVESP *request_tokens, int client_socket, OVESP **cad
             }
             else
             {
-                error_check = OVESP_UPDATE_CADDIE(res, caddie, CANCEL_COMMAND);
+                error_check = OVESP_UPDATE_CADDIE(request_tokens, caddie, CANCEL_COMMAND);
                 if (error_check == -1) {
                     sprintf(buffer_error, "%s#%s", CANCEL_COMMAND, CANCEL_FAIL);
                     error_check = OVESP_SEND(buffer_error, client_socket);
                 }
+                error_check = OVESP_SEND(request_res, client_socket);
+                free(request_res);
             }
-            if (error_check == -1)
-            {
-                sprintf(buffer_error, "%s#%s", CANCEL_COMMAND, CANCEL_FAIL);
-                error_check = OVESP_SEND(buffer_error, client_socket);
-            }
-            error_check = OVESP_SEND(request_res, client_socket);
-            destroy_OVESP(res) ;
-            sql_destroy_result(sql_res);
-            free(request_res);
         }
-
     }
-    
-    
     return error_check;
+}
+int OVESP_CONFIRMER_OPERATION(OVESP *request_tokens, int client_socket, OVESP **caddie)
+{
+
 }
 
 /**
@@ -517,7 +518,6 @@ int OVESP_server(int client_socket, OVESP **caddie)
 {
     OVESP* request;
     int error_check;
-
     error_check = 0;
 
     error_check = OVESP_RECEIVE(&request, client_socket);
@@ -548,18 +548,13 @@ int OVESP_server(int client_socket, OVESP **caddie)
         }
     }
     else if (strcmp(request->command, CADDIE_COMMAND) == 0) {
-        if (*caddie == NULL)
-        {
-            /* Envoyer au client une erreur */
-        }
-        else
-        {
-            error_check = OVESP_CADDIE_OPERATION(*caddie, client_socket);
-            if (error_check < 0) {
-                destroy_OVESP(request);
-                return error_check;
-            }
-        }
+        
+        error_check = OVESP_CADDIE_OPERATION(*caddie, client_socket);
+        if (error_check < 0) {
+            destroy_OVESP(request);
+            return error_check;
+        } 
+    
     }
     else if (strcmp(request->command, CANCEL_COMMAND) == 0) {
         if (*caddie == NULL)
@@ -568,15 +563,24 @@ int OVESP_server(int client_socket, OVESP **caddie)
         }
         else
         {
-            error_check = OVESP_CANCEL_OPERATION(*caddie, client_socket, caddie);
+            error_check = OVESP_CANCEL_OPERATION(request, client_socket, caddie);
             if (error_check < 0) {
                 destroy_OVESP(request);
                 return error_check;
             }
         }
     }
+    else if (strcmp(request->command, CONFIRMER_COMMAND) == 0) {
+        
+        error_check = OVESP_CONFIRMER_OPERATION(request, client_socket, caddie);
+        if (error_check < 0) {
+            destroy_OVESP(request);
+            return error_check;
+        } 
+    
+    }
     else {
-        printf("BAAAAAAAAAD\n");
+        
     }
     destroy_OVESP(request);
 
@@ -673,7 +677,6 @@ int OVESP_Consult(int idArticle, int server_socket, OVESP **result)
     int error_check;
     char buffer[50];
     OVESP *response;
-    char *article;
     error_check = 0;
 
     sprintf(buffer, "%s#%d", CONSULT_COMMAND, idArticle);
@@ -702,13 +705,15 @@ int OVESP_Consult(int idArticle, int server_socket, OVESP **result)
             return 0;   
         }
     }
+    else {
+        return -1;
+    }
 }
 int OVESP_Achat(int idArticle, int quantite, int server_socket, OVESP **result)
 {
     int error_check;
     char buffer[50];
     OVESP *ovesp;
-    char *article;
     error_check = 0;
 
     sprintf(buffer, "%s#%d#%d#", ACHAT_COMMAND, idArticle, quantite);
@@ -769,7 +774,6 @@ int OVESP_Caddie(int server_socket, OVESP **result)
     int error_check;
     char buffer[50];
     OVESP *ovesp;
-    char *article;
     error_check = 0;
 
     sprintf(buffer, "%s#", CADDIE_COMMAND);
@@ -791,6 +795,10 @@ int OVESP_Caddie(int server_socket, OVESP **result)
             destroy_OVESP(ovesp);
             return 1;
         }   
+        else if (strcmp(ovesp->data[0][0], "0") == 0) {
+            destroy_OVESP(ovesp);
+            return 2;
+        }
         else
         {
             *result = ovesp;  
@@ -801,15 +809,14 @@ int OVESP_Caddie(int server_socket, OVESP **result)
     
     return 0;
 }
-int OVESP_Cancel(char *idArticle, int server_socket)
+int OVESP_Cancel(char *idArticle, char *quantity, int server_socket)
 {
     int error_check;
     char buffer[50];
     OVESP *ovesp;
-    char *article;
     error_check = 0;
 
-    sprintf(buffer, "%s#%s#",CANCEL_COMMAND, idArticle);
+    sprintf(buffer, "%s#%s#%s#",CANCEL_COMMAND, idArticle,quantity);
 
     error_check = OVESP_SEND(buffer, server_socket);
     /* if an error occured we return the return statement from the OVESP_SEND function */
@@ -834,7 +841,39 @@ int OVESP_Cancel(char *idArticle, int server_socket)
     
     return 0;   
 }
+int OVESP_Confirmer(int server_socket)
+{
+    int error_check;
+    char buffer[50];
+    OVESP *ovesp;
+    error_check = 0;
 
+    sprintf(buffer, "%s#",CONFIRMER_COMMAND);
+
+    error_check = OVESP_SEND(buffer, server_socket);
+    /* if an error occured we return the return statement from the OVESP_SEND function */
+    if (error_check < 0)
+        return error_check;
+
+
+    error_check = OVESP_RECEIVE(&ovesp, server_socket);
+    if (error_check < 0)
+        return error_check;
+
+    if(strcmp(ovesp->command, CONFIRMER_COMMAND) == 0)
+    {
+        if(strcmp(ovesp->data[0][0], "-1" ) == 0)
+        {
+            destroy_OVESP(ovesp);
+            return 1;
+        }   
+    }
+    else 
+        return -1;
+    
+    return 0;
+
+}
 void destroy_OVESP(OVESP *ovesp)
 {
     int i;
@@ -897,8 +936,7 @@ int OVESP_UPDATE_CADDIE(OVESP *res, OVESP **caddie, const char *command)
             if (strcmp((*caddie)->data[i][0], res->data[0][0]) == 0) {
                 for (j = 0; j < (*caddie)->columns_per_row; j++)
                 {
-                    free((*caddie)->data[i][j]);
-                    
+                    free((*caddie)->data[i][j]);  
                 }
                 free((*caddie)->data[i]);
                 /* Decale tout ce qui se trouve apres*/
@@ -919,9 +957,6 @@ int OVESP_UPDATE_CADDIE(OVESP *res, OVESP **caddie, const char *command)
         }
 
         return 1; /* Not found */
-
-
     }
-        
         return 0;
 }
