@@ -7,15 +7,16 @@
                 "/usr/include/x86_64-linux-gnu/qt5/QtWidgets",
                 "/usr/include/x86_64-linux-gnu/qt5",
                 "/usr/include/mariadb",
-                "${workspaceFolder}/libsockets/include"
+                "${workspaceFolder}/lib/libsockets/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
-            "cStandard": "c89",
+            "cStandard": "gnu89",
             "cppStandard": "gnu++11",
             "intelliSenseMode": "linux-gcc-x64",
             "compilerArgs": [
-                "-std=gnu89"
+                "-Wall",
+                "-Wextra"
             ]
         }
     ],

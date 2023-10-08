@@ -6,7 +6,7 @@
 using namespace std;
 
 extern WindowClient *w;
-int articlesencours = 0 ;
+int articlesencours = 0;
 
 #define REPERTOIRE_IMAGES "images/"
 
@@ -340,6 +340,7 @@ void WindowClient::on_pushButtonLogin_clicked()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void WindowClient::on_pushButtonLogout_clicked()
 {
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -389,10 +390,11 @@ void WindowClient::on_pushButtonPrecedent_clicked()
 void WindowClient::on_pushButtonAcheter_clicked()
 {
     int error_check;
+    int i;
 
     OVESP * res;
 
-    
+
     error_check = OVESP_Achat(articlesencours, ui->spinBoxQuantite->value(), getSocket(), &res);
     if (error_check == 1) {
         dialogueErreur("Erreur", "l'article n'existe pas !");
@@ -407,15 +409,31 @@ void WindowClient::on_pushButtonAcheter_clicked()
         dialogueErreur("Erreur", "Une erreur interne est survenue !");
     }
     else {
-        ajouteArticleTablePanier(res->data[0][1], atof(res->data[0][2]), ui->spinBoxQuantite->value());
-        setArticle(res->data[0][1],atof(res->data[0][2]),atoi(res->data[0][3]),res->data[0][4]);
+        ui->lineEditStock->text();
+        setArticle(res->data[0][1],atof(res->data[0][2]),atoi(ui->lineEditStock->text().toLocal8Bit().data()) - atoi(res->data[0][3]),res->data[0][4]);
     }
+
+    w->videTablePanier();
+
+
+    error_check = OVESP_Caddie(getSocket(), &res);
+    if (error_check == -1 || error_check == 1) {
+        dialogueErreur("Erreur", "FATAL ERROR !");
+    }
+
+    printf("Nombre d'article dans panier : %ld\n", res->rows);
+    for(i = 0; i < res->rows; i++) {
+        
+        ajouteArticleTablePanier(res->data[i][1], atof(res->data[i][2]), atoi(res->data[i][3]));
+    }
+    
 
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void WindowClient::on_pushButtonSupprimer_clicked()
 {
+    
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////

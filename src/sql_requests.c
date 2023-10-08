@@ -485,6 +485,8 @@ Sql_result* sql_achat_article(char *idArticle, char *quantity)
     pthread_mutex_unlock(&mutexDB);
 
     results = sql_get_article(idArticle);
+    results->array_request[0][3] = (char*) realloc(results->array_request[0][3], strlen(quantity) + 1);
+    strcpy(results->array_request[0][3], quantity); 
     if (results == NULL)
         return NULL;
     

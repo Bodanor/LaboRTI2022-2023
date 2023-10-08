@@ -28,6 +28,9 @@ int main(int argc, char **argv)
     int client_socket;
     int error_check;
 
+    OVESP *caddie;
+
+    caddie = NULL;
     config_file = NULL;
     port = threads = -1;
 
@@ -92,7 +95,8 @@ int main(int argc, char **argv)
     while (1) {
         client_socket = Accept_connexion(server_socket);
         while (1) {
-            error_check = OVESP_server(client_socket);
+            
+            error_check = OVESP_server(client_socket, &caddie);
             if (error_check == -1) {
                 printf("Client deconnecte \n");
                 break;
@@ -106,6 +110,11 @@ int main(int argc, char **argv)
             else if (error_check == -4) {
                 printf("Internal error\n");
             }
+            else {
+                if (caddie != NULL)
+                    printf("Nombre d'article dans panier : %ld\n", caddie->rows);
+            }
+        
         }
     
     }

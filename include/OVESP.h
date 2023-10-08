@@ -27,6 +27,8 @@
 #define FAIL "KO"
 #define CONSULT_COMMAND "CONSULT"
 #define ACHAT_COMMAND "ACHAT"
+#define CADDIE_COMMAND "CADDIE"
+#define CANCEL_COMMAND "CANCEL"
 
 #define LOGIN_FAIL(REASON) (LOGIN_COMMAND"#"FAIL"#"REASON)
 #define LOGIN_OK LOGIN_COMMAND"#"SUCCESS
@@ -43,9 +45,12 @@
 #define ACHAT_FAIL "-1"
 #define ACHAT_STOCK_INSUFFISANT "0"
 
+#define CADDIE_FAIL "-1"
+
 #define OVESP_DISCONNECT -1
 #define OVESP_INVALID_DATA -2
 #define OVESP_BROKEN_SOCK -3
+#define OVESP_ERROR -4
 
 #define OVESP_DB_FAIL "DB_FAIL"
 #define OVESP_BAD_REQUEST "BAD_REQUEST"
@@ -66,7 +71,7 @@ typedef struct ovesp_t {
  * @return OVESP_INVALID_DATA : If a corrupt data has been passed.
  * @return OVESP_BROKEN_SOCK : If the data could no be received. That doesn't mean that the socket is closed or the connection is broken !
  */
-int OVESP_server(int client_socket);
+int OVESP_server(int client_socket, OVESP **caddie);
 
 /* All client functions */
 
@@ -105,7 +110,8 @@ int OVESP_Consult(int idArticle, int server_socket, OVESP **result);
  * @return -1: Bad response from server.
  */
 int OVESP_Achat(int idArticle, int quantite, int server_socket, OVESP **result);
-// int OVESP_Caddie(int server_socket);
+int OVESP_Caddie(int server_socket, OVESP **result);
+
 // int OVESP_Cancel(int idArticle, int server_socket);
 // int OVESP_Cancel_All(int server_socket);
 // int OVESP_Confirmer(int server_socket);
