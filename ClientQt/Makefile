@@ -7,10 +7,15 @@ LIBS_TARGET := ../lib/libsockets/libsockets.a
 
 
 INCS        := 	/usr/include/qt5/QtWidgets\
+				/usr/include/x86_64-linux-gnu/qt5/QtWidgets\
 				/usr/include/qt5\
+				/usr/include/x86_64-linux-gnu/qt5\
 				/usr/include/qt5/QtGui\
+				/usr/include/x86_64-linux-gnu/qt5/QtGui\
 				/usr/include/qt5/QtCore\
+				/usr/include/x86_64-linux-gnu/qt5/QtCore\
 				/usr/include/mysql\
+				/usr/include/mariadb/include\
 				../lib/libsockets/include\
 				../include\
 				../src\
