@@ -277,6 +277,39 @@ void WindowClient::dialogueErreur(const char *titre, const char *message)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void WindowClient::closeEvent(QCloseEvent *event)
 {
+    int error_check;
+    int i;
+
+    OVESP * res;
+
+    error_check = OVESP_Caddie(getSocket(), &res);
+    if (error_check == -1 || error_check == 1) {
+        dialogueErreur("Erreur", "FATAL ERROR !");
+    }
+    if (error_check == 2) {
+        dialogueErreur("Erreur", "Le panier est deja vide !");
+    }
+    /* If bucket not empty */
+    else
+    {
+        error_check = OVESP_Cancel_All(getSocket(), &res);
+        if (error_check == -2) {
+            dialogueErreur("Erreur", "Une erreur interne est survenue !");
+        }
+        else {
+            w->videTablePanier();   
+            error_check = OVESP_Consult(articlesencours, getSocket(), &res);
+            if(error_check == 1)
+            {
+                dialogueErreur("Probleme", "Article introuvable");
+                ++articlesencours;
+            }
+            else {
+                setArticle(res->data[0][1],atof(res->data[0][2]),atoi(res->data[0][3]),res->data[0][4]);
+            }
+            
+        }
+    }
 
     exit(0);
 }
@@ -341,6 +374,39 @@ void WindowClient::on_pushButtonLogin_clicked()
 void WindowClient::on_pushButtonLogout_clicked()
 {
 
+    int error_check;
+    int i;
+
+    OVESP * res;
+
+    error_check = OVESP_Caddie(getSocket(), &res);
+    if (error_check == -1 || error_check == 1) {
+        dialogueErreur("Erreur", "FATAL ERROR !");
+    }
+    if (error_check == 2) {
+        dialogueErreur("Erreur", "Le panier est deja vide !");
+    }
+    /* If bucket not empty */
+    else
+    {
+        error_check = OVESP_Cancel_All(getSocket(), &res);
+        if (error_check == -2) {
+            dialogueErreur("Erreur", "Une erreur interne est survenue !");
+        }
+        else {
+            w->videTablePanier();   
+            error_check = OVESP_Consult(articlesencours, getSocket(), &res);
+            if(error_check == 1)
+            {
+                dialogueErreur("Probleme", "Article introuvable");
+                ++articlesencours;
+            }
+            else {
+                setArticle(res->data[0][1],atof(res->data[0][2]),atoi(res->data[0][3]),res->data[0][4]);
+            }
+            
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -456,7 +522,15 @@ void WindowClient::on_pushButtonSupprimer_clicked()
         }
         else {
             
-            setArticle(res->data[0][1],atof(res->data[0][2]),atoi(ui->lineEditStock->text().toLocal8Bit().data()) + atoi(res->data[0][3]),res->data[0][4]);
+            error_check = OVESP_Consult(articlesencours, getSocket(), &res);
+            if(error_check == 1)
+            {
+                dialogueErreur("Probleme", "Article introuvable");
+                ++articlesencours;
+            }
+            else {
+                setArticle(res->data[0][1],atof(res->data[0][2]),atoi(res->data[0][3]),res->data[0][4]);
+            }
         }
 
         w->videTablePanier();
@@ -478,6 +552,39 @@ void WindowClient::on_pushButtonSupprimer_clicked()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void WindowClient::on_pushButtonViderPanier_clicked()
 {
+    int error_check;
+    int i;
+
+    OVESP * res;
+
+    error_check = OVESP_Caddie(getSocket(), &res);
+    if (error_check == -1 || error_check == 1) {
+        dialogueErreur("Erreur", "FATAL ERROR !");
+    }
+    if (error_check == 2) {
+        dialogueErreur("Erreur", "Le panier est deja vide !");
+    }
+    /* If bucket not empty */
+    else
+    {
+        error_check = OVESP_Cancel_All(getSocket(), &res);
+        if (error_check == -2) {
+            dialogueErreur("Erreur", "Une erreur interne est survenue !");
+        }
+        else {
+            w->videTablePanier();   
+            error_check = OVESP_Consult(articlesencours, getSocket(), &res);
+            if(error_check == 1)
+            {
+                dialogueErreur("Probleme", "Article introuvable");
+                ++articlesencours;
+            }
+            else {
+                setArticle(res->data[0][1],atof(res->data[0][2]),atoi(res->data[0][3]),res->data[0][4]);
+            }
+            
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -485,11 +592,17 @@ void WindowClient::on_pushButtonPayer_clicked()
 {
     int error_check;
 
-    error_check = OVESP_Confirmer(getSocket());
+    char username[30];
+    strcpy(username, getNom());
 
-    if(error_check = -1)
+    error_check = OVESP_Confirmer(getSocket(), username);
+
+    if(error_check == -1)
     {
         dialogueErreur("Erreur", "Erreur de payement !");
+    }
+    else if(error_check == 1) {
+        dialogueErreur("Erreur", "Le panier est vide !");
     }
     else {
         w->videTablePanier();

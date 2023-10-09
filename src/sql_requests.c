@@ -543,21 +543,52 @@ int sql_cancel(char *idArticle, char *quantity)
     return 0;
 
 }
-int sql_confirmer(Sql_result **result)
+Sql_result *sql_get_id_by_username(char *username)
+{
+    char request[200];
+    Sql_result *results;
+    /*Il faut créer la table article */
+    sprintf(request, "select id from clients where login = \"%s\"", username);
+
+    pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
+
+    results = sql_get_result(request);
+    if (results == NULL) {
+        pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
+        return NULL;
+    }
+    
+    /* Release the mutex and return the request result */
+    pthread_mutex_unlock(&mutexDB);
+    return results;
+    
+}
+int sql_confirmer(Sql_result **caddie, char *username)
 {
     int error_check;
     char request_str[200];
     int i;
+    Sql_result*id_request;
+    float prix_tot = 0;
 
-    for(i=0;i<(*result)->rows;i++)
+    id_request = sql_get_id_by_username(username);
+    if (id_request == NULL)
+        return 1; /* ID pas trouve */
+
+    for(i=0;i<(*caddie)->rows;i++)
     {
-        sprintf(request_str, "insert into ventes (idFacture, idArticle, quantite) values(%d,%s,%s)",0, (*result)->array_request[i][0], (*result)->array_request[i][3]);
-        pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
-        if (mysql_query(connexion, request_str) != 0) {
-            pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
-            return -1;
-        }
+        prix_tot = prix_tot + (atoi(((*caddie)->array_request[i][3])) *atof(((*caddie)->array_request[i][2])));
     }
+    
+
+    sprintf(request_str, "insert into factures values(%d,%s,%s,%f,%d)",0, id_request->array_request[0][0], "(SELECT NOW())", prix_tot, 0);
+    printf("%s\n", request_str);
+    pthread_mutex_lock(&mutexDB); /* Lock the mutex*/
+    if (mysql_query(connexion, request_str) != 0) {
+        pthread_mutex_unlock(&mutexDB); /* Release the mutex if error */
+        return -1;
+    }
+    
       
     /* Release the mutex */
     pthread_mutex_unlock(&mutexDB);

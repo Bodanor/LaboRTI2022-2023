@@ -96,5 +96,6 @@ void sql_destroy_result(Sql_result *request);
  */
 int sql_achat(char *idArticle, char *quantite, Sql_result **result);
 int sql_cancel(char *idArticle, char *quantity);
-int sql_confirmer(Sql_result **result);
+Sql_result *sql_get_id_by_username(char *username);
+int sql_confirmer(Sql_result **caddie, char *username);
 #endif 

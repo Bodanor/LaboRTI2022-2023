@@ -31,6 +31,7 @@
 #define CANCEL_COMMAND "CANCEL"
 #define CONFIRMER_COMMAND "CONFIRMER"
 #define CONFIRMER_SUCCESSFULL "CONFIRMER#1#"
+#define CONFIRMER_FAIL "-1"
 
 #define LOGIN_FAIL(REASON) (LOGIN_COMMAND "#" FAIL "#" REASON)
 #define LOGIN_OK LOGIN_COMMAND "#" SUCCESS
@@ -42,9 +43,9 @@
 #define BAD_REQUEST "BAD_REQUEST"
 #define SERVER_ERROR "SERVER_ERROR"
 
-#define CONSULT_FAIL "CONSULT#-1"
+#define CONSULT_FAIL "-1"
 
-#define CANCEL_FAIL "CANCEL#-1"
+#define CANCEL_FAIL "-1"
 
 #define ACHAT_FAIL "-1"
 #define ACHAT_STOCK_INSUFFISANT "0"
@@ -116,8 +117,8 @@ int OVESP_Consult(int idArticle, int server_socket, OVESP **result);
 int OVESP_Achat(int idArticle, int quantite, int server_socket, OVESP **result);
 int OVESP_Caddie(int server_socket, OVESP **result);
 int OVESP_Cancel(char* idArticle, char *quantity, int server_socket);
-// int OVESP_Cancel_All(int server_socket);
-int OVESP_Confirmer(int server_socket);
+int OVESP_Cancel_All(int server_socket, OVESP **caddie);
+int OVESP_Confirmer(int server_socket, char *username);
 // int OVESP_Logout(int server_socket);
 
 
