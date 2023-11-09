@@ -99,7 +99,9 @@ int Server_init(const int port, const int threads, const char *configfile)
     
      for (i = 0; i < server_struct.max_threads; i++)
         pthread_create(&thread, NULL, ClientFunction, NULL);
-     
+    
+    server_struct.accepted_write_index = 0;
+    server_struct.accepted_read_index = 0;
     return server_struct.server_socket;
 
 
@@ -170,6 +172,7 @@ void add_client(int client_socket)
 {
     pthread_mutex_lock(&server_struct.mutexAcceptedSockets);
     server_struct.AcceptedSockets[server_struct.accepted_write_index] = client_socket;
+    server_struct.accepted_write_index++;
     if (server_struct.accepted_write_index == MAX_QUEUE)
             server_struct.accepted_write_index = 0;
 #ifdef DEBUG
@@ -183,57 +186,3 @@ void add_client(int client_socket)
     pthread_mutex_unlock(&server_struct.mutexAcceptedSockets);
     pthread_cond_signal(&server_struct.condAcceptedSockets);
 }
-
-void* ClientFunction(void *p)
-{
-
-}
-
-// int articles_already_exists(char *idArticle)
-// {
-//     int i;
-//     int x;
-//     Sql_result *results;
-
-//     /* Get a list of all the users */
-//     results = sql_get_all_articles();
-//     if (results == NULL)
-//         return -1;
-    
-//     else {
-//         /* Iterate all the rows (row numbers) + columns (usernames) and compare*/
-//         for(i = 0; i < results->rows; i++) {
-//             for (x = 0; x < results->columns_per_row; x++) {
-//                 /* If the username is found, return 1*/
-//                 if (strcmp(results->array_request[i][x], idArticle) == 0) {
-//                     destroy_sql_result(results); /* Dont forget to free the sql_result */
-//                     return 1;
-//                 }
-//             }
-//         }
-//     }
-//     /*Je me pose une question ? Etant donné qu'on check qu'une seule colonne du tab 
-//     Est-ce nécessaire de faire deux boucles ? on pourrait simplement check chaque colonne et ce serait bon ainsi non ?*/
-//     destroy_sql_result(results); /* Dont forget to free the sql_result */
-
-//     return 0;
-// }
-// int consult(char *idArticle, Sql_result **result)
-// {
-//     int i;
-//     Sql_result *results;
-    
-//     results  = sql_get_article(idArticle);
-
-//     if ((i = articles_already_exists(idArticle)) == -1) {
-//         /* Database error */
-//         return -1;
-//     }
-//     else if (i == 0) 
-//         return 1;
-
-//     results = sql_get_article(idArticle);
-//     *result = results;
-
-//     return 0;
-// }
