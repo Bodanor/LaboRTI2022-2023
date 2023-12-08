@@ -341,13 +341,13 @@ static int OVESP_CONSULT_OPERATION(OVESP *request_tokens, int client_socket)
     /* If IdArticle we return a bad request.*/
     if (check_is_number(request_tokens->data[0][0]) == 1) {
         
-        sprintf(buffer_error, "%s#%s", ACHAT_COMMAND, OVESP_BAD_REQUEST);
+        sprintf(buffer_error, "%s#%s", CONSULT_COMMAND, OVESP_BAD_REQUEST);
         error_check = OVESP_SEND(buffer_error, client_socket);
     }
 
     else if ((error_check = sql_consult(request_tokens->data[0][0], &sql_res)) ==-1 || error_check == 1) {
          /* Database error */
-        strcpy(buffer_error, CONSULT_FAIL);
+        sprintf(buffer_error, "%s#%s", CONSULT_COMMAND, CONSULT_FAIL);
         error_check = OVESP_SEND(buffer_error, client_socket);
     }
     else 
@@ -356,14 +356,14 @@ static int OVESP_CONSULT_OPERATION(OVESP *request_tokens, int client_socket)
         if ((res = OVESP_SQL_TO_OVESP(sql_res, request_tokens->command)) == NULL)
         {
             sql_destroy_result(sql_res);
-            strcpy(buffer_error, CONSULT_FAIL);
+            sprintf(buffer_error, "%s#%s", CONSULT_COMMAND, CONSULT_FAIL);
             error_check = OVESP_SEND(buffer_error, client_socket);
         }
         else
         {
             if ((request_res = OVESP_TOKENIZER(res)) == NULL) {
                 destroy_OVESP(res);
-                strcpy(buffer_error, CONSULT_FAIL);
+                sprintf(buffer_error, "%s#%s", CONSULT_COMMAND, CONSULT_FAIL);
                 error_check = OVESP_SEND(buffer_error, client_socket);
             }
             else {

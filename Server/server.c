@@ -97,8 +97,6 @@ int Server_init(const int port, const int threads, const char *configfile)
 
     printf("Creating threads pool of size (%d)\n", server_struct.max_threads);
     
-     for (i = 0; i < server_struct.max_threads; i++)
-        pthread_create(&thread, NULL, ClientFunction, NULL);
     
     server_struct.accepted_write_index = 0;
     server_struct.accepted_read_index = 0;

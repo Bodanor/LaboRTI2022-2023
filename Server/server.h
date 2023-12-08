@@ -42,7 +42,7 @@ typedef struct server_t Server_t;
  * @param p not used.
  * @return void* 
  */
-void* ClientFunction(void *p);
+//void* ClientFunction(void *p);
 
 /**
  * @brief 
