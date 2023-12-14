@@ -1,3 +1,3 @@
 [submodule "lib/libsockets"]
 	path = lib/libsockets
-	url = git@github.com:bodanor/libsockets
+	url = https://github.com/bodanor/libsockets
